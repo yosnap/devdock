@@ -4,6 +4,12 @@ A developer project launcher built with Tauri v2 + React + TypeScript. Organize,
 
 ![DevDock](https://img.shields.io/badge/version-0.1.0-blue) ![License](https://img.shields.io/badge/license-MIT-green) ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey)
 
+## Screenshots
+
+| Light Mode | Dark Mode |
+|-----------|----------|
+| ![Light Mode](docs/images/LightMode.png) | ![Dark Mode](docs/images/DarkMode.png) |
+
 ## Features
 
 - **Project Management** — Add local projects with auto-detection of tech stack (Node.js, Rust, Python, Go, Java, Swift, PHP, Ruby, .NET)
