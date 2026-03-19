@@ -16,6 +16,7 @@ export interface Project {
   created_at: string;
   updated_at: string;
   tags?: string[];
+  avatar?: string;
   // Phase 3 fields
   health_score: number;      // -1 = not scored yet
   github_owner?: string;
@@ -37,6 +38,7 @@ export interface Workspace {
   name: string;
   color?: string;
   icon?: string;
+  avatar?: string;
   sort_order: number;
   created_at: string;
 }
@@ -222,6 +224,48 @@ export interface QuickLaunchItem {
   path: string;
   stack?: string;
   score: number;
+}
+
+// Phase 5: Structured notes + Theme
+
+export type NoteType = 'bug' | 'idea' | 'task' | 'reminder' | 'note';
+
+export interface NoteItem {
+  id: string;
+  project_id: string;
+  title: string;
+  content: string;
+  note_type: NoteType;
+  github_issue_url?: string;
+  github_issue_number?: number;
+  is_resolved: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateNotePayload {
+  project_id: string;
+  title: string;
+  content: string;
+  note_type: NoteType;
+}
+
+export interface UpdateNotePayload {
+  id: string;
+  title: string;
+  content: string;
+  note_type: NoteType;
+}
+
+export type AppTheme = 'light' | 'dark' | 'auto';
+
+export interface TechBreakdown {
+  language?: string;
+  frameworks: string[];
+  databases: string[];
+  orms: string[];
+  testing: string[];
+  devops: string[];
 }
 
 // UI state types

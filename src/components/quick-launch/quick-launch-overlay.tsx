@@ -35,12 +35,12 @@ function ResultRow({
         gap: 10,
         padding: '8px 14px',
         cursor: 'pointer',
-        background: selected ? '#e6f4ff' : 'transparent',
+        background: selected ? 'var(--selected-bg)' : 'transparent',
         borderRadius: 6,
         transition: 'background 0.1s',
       }}
     >
-      <RocketOutlined style={{ color: selected ? '#1677ff' : '#bbb', flexShrink: 0 }} />
+      <RocketOutlined style={{ color: selected ? '#1677ff' : 'var(--icon-muted)', flexShrink: 0 }} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <Text strong={selected} ellipsis style={{ display: 'block', fontSize: 13 }}>
           {item.name}
@@ -113,12 +113,12 @@ export function QuickLaunchOverlay({ open, onClose }: QuickLaunchOverlayProps) {
       <div onKeyDown={handleKeyDown}>
         <Input
           ref={inputRef}
-          prefix={<SearchOutlined style={{ color: '#bbb' }} />}
+          prefix={<SearchOutlined style={{ color: 'var(--icon-muted)' }} />}
           placeholder="Search projects…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           bordered={false}
-          style={{ fontSize: 16, padding: '12px 16px', borderBottom: '1px solid #f0f0f0' }}
+          style={{ fontSize: 16, padding: '12px 16px', borderBottom: '1px solid var(--border-color)' }}
           suffix={isLoading ? <Spin size="small" /> : null}
         />
 
@@ -138,7 +138,7 @@ export function QuickLaunchOverlay({ open, onClose }: QuickLaunchOverlayProps) {
           ))}
         </div>
 
-        <div style={{ padding: '6px 14px', borderTop: '1px solid #f0f0f0', fontSize: 11, color: '#bbb' }}>
+        <div style={{ padding: '6px 14px', borderTop: '1px solid var(--border-color)', fontSize: 11, color: 'var(--icon-muted)' }}>
           ↑↓ navigate · Enter launch · Esc close
         </div>
       </div>

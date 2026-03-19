@@ -1,6 +1,7 @@
-import { ConfigProvider, App as AntApp } from 'antd';
+import { App as AntApp, ConfigProvider, theme as antdTheme } from 'antd';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AppLayout } from './components/layout/app-layout';
+import { useTheme } from './hooks/use-theme';
 import './styles/globals.css';
 
 const queryClient = new QueryClient({
@@ -12,23 +13,33 @@ const queryClient = new QueryClient({
   },
 });
 
-// Ant Design theme tokens
-const antTheme = {
-  token: {
-    colorPrimary: '#1677ff',
-    borderRadius: 6,
-    fontFamily: `-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`,
-  },
+const BASE_TOKEN = {
+  colorPrimary: '#1677ff',
+  borderRadius: 6,
+  fontFamily: `-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`,
 };
+
+function ThemedApp() {
+  const { effectiveTheme } = useTheme();
+
+  return (
+    <ConfigProvider
+      theme={{
+        algorithm: effectiveTheme === 'dark' ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
+        token: BASE_TOKEN,
+      }}
+    >
+      <AntApp>
+        <AppLayout />
+      </AntApp>
+    </ConfigProvider>
+  );
+}
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ConfigProvider theme={antTheme}>
-        <AntApp>
-          <AppLayout />
-        </AntApp>
-      </ConfigProvider>
+      <ThemedApp />
     </QueryClientProvider>
   );
 }

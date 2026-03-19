@@ -1,7 +1,9 @@
 import { invoke } from '@tauri-apps/api/core';
 import type {
+  AppTheme,
   CiStatus,
   CreateIdePayload,
+  CreateNotePayload,
   CreateProjectPayload,
   CreateWorkspacePayload,
   Dependency,
@@ -12,11 +14,14 @@ import type {
   HealthInput,
   HealthResult,
   IdeConfig,
+  NoteItem,
   Project,
   ProjectLink,
   ProjectNote,
   QuickLaunchItem,
+  TechBreakdown,
   UpdateIdePayload,
+  UpdateNotePayload,
   UpdateProjectPayload,
   UpdateWorkspacePayload,
   UpsertLinkPayload,
@@ -42,6 +47,9 @@ export const launchProject = (id: string) =>
 
 export const detectProjectStack = (path: string) =>
   invoke<string | null>('detect_project_stack', { path });
+
+export const analyzeProjectTech = (path: string) =>
+  invoke<TechBreakdown>('analyze_project_tech', { path });
 
 // --- IDE commands ---
 
@@ -168,3 +176,49 @@ export const checkForUpdate = () => invoke<UpdateInfo>('check_for_update');
 export const installUpdate = () => invoke<void>('install_update');
 export const exportConfig = () => invoke<string>('export_config');
 export const importConfig = (json: string) => invoke<ImportResult>('import_config', { json });
+
+// --- Structured note items ---
+
+export const listNoteItems = (projectId: string) =>
+  invoke<NoteItem[]>('list_note_items', { projectId });
+
+export const createNoteItem = (payload: CreateNotePayload) =>
+  invoke<NoteItem>('create_note_item', { payload });
+
+export const updateNoteItem = (payload: UpdateNotePayload) =>
+  invoke<NoteItem>('update_note_item', { payload });
+
+export const toggleNoteResolved = (id: string) =>
+  invoke<NoteItem>('toggle_note_resolved', { id });
+
+export const deleteNoteItem = (id: string) =>
+  invoke<void>('delete_note_item', { id });
+
+export const linkNoteToIssue = (id: string, issueUrl: string, issueNumber: number) =>
+  invoke<NoteItem>('link_note_to_issue', { id, issueUrl, issueNumber });
+
+// --- App preferences ---
+
+export const getPreference = (key: string) =>
+  invoke<string | null>('get_preference', { key });
+
+export const setPreference = (key: string, value: string) =>
+  invoke<void>('set_preference', { key, value });
+
+// Convenience helpers for theme
+export const getTheme = () => getPreference('theme') as Promise<AppTheme | null>;
+export const setTheme = (theme: AppTheme) => setPreference('theme', theme);
+
+// --- Avatar commands ---
+
+/** Upload an image file as avatar for a project or workspace. Returns the stored filename. */
+export const uploadAvatar = (entity: 'project' | 'workspace', id: string, sourcePath: string) =>
+  invoke<string>('upload_avatar', { entity, id, sourcePath });
+
+/** Remove avatar for a project or workspace. */
+export const removeAvatar = (entity: 'project' | 'workspace', id: string) =>
+  invoke<void>('remove_avatar', { entity, id });
+
+/** Resolve full filesystem path for an avatar filename. Returns null if not found. */
+export const getAvatarPath = (filename: string) =>
+  invoke<string | null>('get_avatar_path', { filename });

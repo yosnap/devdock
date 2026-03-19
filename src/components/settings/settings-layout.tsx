@@ -1,5 +1,6 @@
 /// Settings layout with tab navigation for IDEs, Workspaces, GitHub, Health, About.
 import {
+  BgColorsOutlined,
   GithubOutlined,
   HeartOutlined,
   InfoCircleOutlined,
@@ -16,13 +17,15 @@ const WorkspaceManager = lazy(() => import('../workspaces/workspace-manager').th
 const GithubAuthSettings = lazy(() => import('../github/github-auth-settings').then(m => ({ default: m.GithubAuthSettings })));
 const HealthConfigPanel = lazy(() => import('../health/health-config-panel').then(m => ({ default: m.HealthConfigPanel })));
 const AboutPanel = lazy(() => import('./about-panel').then(m => ({ default: m.AboutPanel })));
+const AppearancePanel = lazy(() => import('./appearance-panel').then(m => ({ default: m.AppearancePanel })));
 
 const TABS = [
-  { key: 'ides',       label: 'IDEs',        icon: <LaptopOutlined />,      Panel: IdeConfigPanel },
-  { key: 'workspaces', label: 'Workspaces',   icon: <TeamOutlined />,        Panel: WorkspaceManager },
-  { key: 'github',     label: 'GitHub',       icon: <GithubOutlined />,      Panel: GithubAuthSettings },
-  { key: 'health',     label: 'Health Score', icon: <HeartOutlined />,       Panel: HealthConfigPanel },
-  { key: 'about',      label: 'About',        icon: <InfoCircleOutlined />,  Panel: AboutPanel },
+  { key: 'ides',        label: 'IDEs',        icon: <LaptopOutlined />,      Panel: IdeConfigPanel },
+  { key: 'workspaces',  label: 'Workspaces',   icon: <TeamOutlined />,        Panel: WorkspaceManager },
+  { key: 'github',      label: 'GitHub',       icon: <GithubOutlined />,      Panel: GithubAuthSettings },
+  { key: 'health',      label: 'Health Score', icon: <HeartOutlined />,       Panel: HealthConfigPanel },
+  { key: 'appearance',  label: 'Apariencia',   icon: <BgColorsOutlined />,    Panel: AppearancePanel },
+  { key: 'about',       label: 'About',        icon: <InfoCircleOutlined />,  Panel: AboutPanel },
 ];
 
 export function SettingsLayout() {

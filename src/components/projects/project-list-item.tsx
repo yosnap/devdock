@@ -6,8 +6,9 @@ import {
   HeartOutlined,
   RocketOutlined,
 } from '@ant-design/icons';
-import { Button, Space, Tag, Tooltip, Typography } from 'antd';
+import { Avatar, Button, Space, Tag, Tooltip, Typography } from 'antd';
 import { useLaunchProject, useUpdateProject } from '../../queries/use-projects-query';
+import { useAvatarUrl } from '../../hooks/use-avatar-url';
 import type { Project } from '../../types';
 import { stackColor, stackLabel } from './stack-utils';
 
@@ -22,6 +23,7 @@ interface ProjectListItemProps {
 export function ProjectListItem({ project, onEdit, onDelete }: ProjectListItemProps) {
   const launch = useLaunchProject();
   const update = useUpdateProject();
+  const avatarUrl = useAvatarUrl(project.avatar);
 
   function toggleFavorite() {
     update.mutate({ id: project.id, is_favorite: !project.is_favorite });
@@ -45,12 +47,16 @@ export function ProjectListItem({ project, onEdit, onDelete }: ProjectListItemPr
       <Tooltip title={project.is_favorite ? 'Remove favorite' : 'Add favorite'}>
         {project.is_favorite
           ? <HeartFilled onClick={toggleFavorite} style={{ color: '#ff4d4f', cursor: 'pointer' }} />
-          : <HeartOutlined onClick={toggleFavorite} style={{ color: '#bbb', cursor: 'pointer' }} />
+          : <HeartOutlined onClick={toggleFavorite} style={{ color: 'var(--icon-muted)', cursor: 'pointer' }} />
         }
       </Tooltip>
 
       {/* Icon + Name */}
-      <FolderOpenOutlined style={{ color: '#1677ff', fontSize: 16 }} />
+      {avatarUrl ? (
+        <Avatar size={28} src={avatarUrl} />
+      ) : (
+        <FolderOpenOutlined style={{ color: '#1677ff', fontSize: 16 }} />
+      )}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <Text strong style={{ fontSize: 13 }}>{project.name}</Text>

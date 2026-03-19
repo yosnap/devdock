@@ -2,6 +2,7 @@ import { Layout, Modal, notification } from 'antd';
 import { useEffect, useState } from 'react';
 import { useDeleteProject } from '../../queries/use-projects-query';
 import { useAppStore } from '../../stores/app-store';
+import { useTheme } from '../../hooks/use-theme';
 import type { Project } from '../../types';
 import { NeedsAttentionView } from '../health/needs-attention-view';
 import { AddProjectModal } from '../projects/add-project-modal';
@@ -11,6 +12,7 @@ import { QuickLaunchOverlay } from '../quick-launch/quick-launch-overlay';
 import { SettingsLayout } from '../settings/settings-layout';
 import { Sidebar } from './sidebar';
 import { TopBar } from './top-bar';
+import { QuickCreateWorkspaceModal } from '../workspaces/quick-create-workspace-modal';
 
 const { Sider, Content, Header } = Layout;
 
@@ -18,6 +20,7 @@ const SIDEBAR_WIDTH = 220;
 
 export function AppLayout() {
   const { activeView } = useAppStore();
+  const { effectiveTheme } = useTheme();
   const deleteProject = useDeleteProject();
 
   const [addModalOpen, setAddModalOpen] = useState(false);
@@ -65,7 +68,7 @@ export function AppLayout() {
       {/* Sidebar */}
       <Sider
         width={SIDEBAR_WIDTH}
-        theme="light"
+        theme={effectiveTheme}
         style={{ borderRight: '1px solid var(--border-color)', overflow: 'auto' }}
       >
         <Sidebar />
@@ -115,6 +118,9 @@ export function AppLayout() {
         open={quickLaunchOpen}
         onClose={() => setQuickLaunchOpen(false)}
       />
+
+      {/* Quick create workspace (triggered from sidebar) */}
+      <QuickCreateWorkspaceModal />
     </Layout>
   );
 }

@@ -1,3 +1,4 @@
+pub mod avatar_service;
 pub mod background_worker;
 pub mod db_service;
 pub mod deps_analyzer;
@@ -9,3 +10,4 @@ pub mod keychain_service;
 pub mod project_scanner;
 pub mod quick_launch;
 pub mod registry_client;
+pub mod tech_detector;

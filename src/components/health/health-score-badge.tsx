@@ -20,7 +20,9 @@ function scoreLabel(score: number): string {
 }
 
 export function HealthScoreBadge({ score, size = 'medium' }: HealthScoreBadgeProps) {
-  if (score < 0) {
+  // Guard against null/undefined from DB rows added before health_score column
+  const safeScore = typeof score === 'number' && isFinite(score) ? score : -1;
+  if (safeScore < 0) {
     return (
       <Tooltip title="Health score not calculated yet">
         <span
@@ -31,9 +33,9 @@ export function HealthScoreBadge({ score, size = 'medium' }: HealthScoreBadgePro
             width: size === 'small' ? 24 : 32,
             height: size === 'small' ? 24 : 32,
             borderRadius: '50%',
-            border: '2px solid #d9d9d9',
+            border: '2px solid var(--border-color)',
             fontSize: size === 'small' ? 9 : 11,
-            color: '#bbb',
+            color: 'var(--icon-muted)',
           }}
         >
           ?
@@ -42,19 +44,19 @@ export function HealthScoreBadge({ score, size = 'medium' }: HealthScoreBadgePro
     );
   }
 
-  const color = scoreColor(score);
+  const color = scoreColor(safeScore);
   const dim = size === 'small' ? 28 : 36;
   const stroke = 3;
   const radius = (dim - stroke * 2) / 2;
   const circumference = 2 * Math.PI * radius;
-  const dashOffset = circumference * (1 - score / 100);
+  const dashOffset = circumference * (1 - safeScore / 100);
 
   return (
-    <Tooltip title={`Health: ${score}/100 — ${scoreLabel(score)}`}>
+    <Tooltip title={`Health: ${safeScore}/100 — ${scoreLabel(safeScore)}`}>
       <span style={{ display: 'inline-flex', position: 'relative', cursor: 'default' }}>
         <svg width={dim} height={dim} style={{ transform: 'rotate(-90deg)' }}>
           {/* Track */}
-          <circle cx={dim / 2} cy={dim / 2} r={radius} fill="none" stroke="#f0f0f0" strokeWidth={stroke} />
+          <circle cx={dim / 2} cy={dim / 2} r={radius} fill="none" stroke="var(--border-color)" strokeWidth={stroke} />
           {/* Progress */}
           <circle
             cx={dim / 2}
@@ -81,7 +83,7 @@ export function HealthScoreBadge({ score, size = 'medium' }: HealthScoreBadgePro
             color,
           }}
         >
-          {score}
+          {safeScore}
         </span>
       </span>
     </Tooltip>

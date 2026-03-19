@@ -1,4 +1,6 @@
-use crate::models::{ProjectLink, ProjectNote, UpsertLinkPayload};
+use crate::models::{
+    CreateNotePayload, NoteItem, ProjectLink, ProjectNote, UpdateNotePayload, UpsertLinkPayload,
+};
 use crate::services::db_service::DbState;
 use chrono::Utc;
 use sqlx::Row;
@@ -215,4 +217,225 @@ fn validate_url(url: &str) -> Result<(), String> {
     } else {
         Err(format!("Invalid URL scheme. Only http/https/ftp allowed: {url}"))
     }
+}
+
+// --- Structured Note Items ---
+
+fn row_to_note_item(r: &sqlx::sqlite::SqliteRow) -> NoteItem {
+    let is_resolved: i64 = r.get("is_resolved");
+    let github_issue_number: Option<i64> = r.get("github_issue_number");
+    NoteItem {
+        id: r.get("id"),
+        project_id: r.get("project_id"),
+        title: r.get("title"),
+        content: r.get("content"),
+        note_type: r.get("note_type"),
+        github_issue_url: r.get("github_issue_url"),
+        github_issue_number,
+        is_resolved: is_resolved != 0,
+        created_at: r.get("created_at"),
+        updated_at: r.get("updated_at"),
+    }
+}
+
+/// List all note items for a project
+#[tauri::command]
+pub async fn list_note_items(
+    project_id: String,
+    db: State<'_, DbState>,
+) -> Result<Vec<NoteItem>, String> {
+    let rows = sqlx::query(
+        "SELECT id, project_id, title, content, note_type, github_issue_url, \
+         github_issue_number, is_resolved, created_at, updated_at \
+         FROM project_note_items WHERE project_id = ? ORDER BY created_at DESC",
+    )
+    .bind(&project_id)
+    .fetch_all(&db.0)
+    .await
+    .map_err(|e| format!("DB error: {e}"))?;
+
+    Ok(rows.iter().map(row_to_note_item).collect())
+}
+
+/// Create a new note item
+#[tauri::command]
+pub async fn create_note_item(
+    payload: CreateNotePayload,
+    db: State<'_, DbState>,
+) -> Result<NoteItem, String> {
+    let id = Uuid::new_v4().to_string();
+    let now = Utc::now().to_rfc3339();
+
+    sqlx::query(
+        "INSERT INTO project_note_items \
+         (id, project_id, title, content, note_type, is_resolved, created_at, updated_at) \
+         VALUES (?, ?, ?, ?, ?, 0, ?, ?)",
+    )
+    .bind(&id)
+    .bind(&payload.project_id)
+    .bind(&payload.title)
+    .bind(&payload.content)
+    .bind(&payload.note_type)
+    .bind(&now)
+    .bind(&now)
+    .execute(&db.0)
+    .await
+    .map_err(|e| format!("Failed to create note item: {e}"))?;
+
+    Ok(NoteItem {
+        id,
+        project_id: payload.project_id,
+        title: payload.title,
+        content: payload.content,
+        note_type: payload.note_type,
+        github_issue_url: None,
+        github_issue_number: None,
+        is_resolved: false,
+        created_at: now.clone(),
+        updated_at: now,
+    })
+}
+
+/// Update an existing note item
+#[tauri::command]
+pub async fn update_note_item(
+    payload: UpdateNotePayload,
+    db: State<'_, DbState>,
+) -> Result<NoteItem, String> {
+    let now = Utc::now().to_rfc3339();
+
+    sqlx::query(
+        "UPDATE project_note_items SET title = ?, content = ?, note_type = ?, updated_at = ? \
+         WHERE id = ?",
+    )
+    .bind(&payload.title)
+    .bind(&payload.content)
+    .bind(&payload.note_type)
+    .bind(&now)
+    .bind(&payload.id)
+    .execute(&db.0)
+    .await
+    .map_err(|e| format!("Failed to update note item: {e}"))?;
+
+    let row = sqlx::query(
+        "SELECT id, project_id, title, content, note_type, github_issue_url, \
+         github_issue_number, is_resolved, created_at, updated_at \
+         FROM project_note_items WHERE id = ?",
+    )
+    .bind(&payload.id)
+    .fetch_one(&db.0)
+    .await
+    .map_err(|e| format!("DB error: {e}"))?;
+
+    Ok(row_to_note_item(&row))
+}
+
+/// Toggle resolved state of a note item
+#[tauri::command]
+pub async fn toggle_note_resolved(
+    id: String,
+    db: State<'_, DbState>,
+) -> Result<NoteItem, String> {
+    let now = Utc::now().to_rfc3339();
+
+    sqlx::query(
+        "UPDATE project_note_items SET is_resolved = NOT is_resolved, updated_at = ? WHERE id = ?",
+    )
+    .bind(&now)
+    .bind(&id)
+    .execute(&db.0)
+    .await
+    .map_err(|e| format!("Failed to toggle note: {e}"))?;
+
+    let row = sqlx::query(
+        "SELECT id, project_id, title, content, note_type, github_issue_url, \
+         github_issue_number, is_resolved, created_at, updated_at \
+         FROM project_note_items WHERE id = ?",
+    )
+    .bind(&id)
+    .fetch_one(&db.0)
+    .await
+    .map_err(|e| format!("DB error: {e}"))?;
+
+    Ok(row_to_note_item(&row))
+}
+
+/// Delete a note item
+#[tauri::command]
+pub async fn delete_note_item(id: String, db: State<'_, DbState>) -> Result<(), String> {
+    sqlx::query("DELETE FROM project_note_items WHERE id = ?")
+        .bind(&id)
+        .execute(&db.0)
+        .await
+        .map_err(|e| format!("Failed to delete note item: {e}"))?;
+    Ok(())
+}
+
+/// Link a GitHub issue to a note item (called after creating the issue)
+#[tauri::command]
+pub async fn link_note_to_issue(
+    id: String,
+    issue_url: String,
+    issue_number: i64,
+    db: State<'_, DbState>,
+) -> Result<NoteItem, String> {
+    let now = Utc::now().to_rfc3339();
+
+    sqlx::query(
+        "UPDATE project_note_items SET github_issue_url = ?, github_issue_number = ?, \
+         updated_at = ? WHERE id = ?",
+    )
+    .bind(&issue_url)
+    .bind(issue_number)
+    .bind(&now)
+    .bind(&id)
+    .execute(&db.0)
+    .await
+    .map_err(|e| format!("Failed to link issue: {e}"))?;
+
+    let row = sqlx::query(
+        "SELECT id, project_id, title, content, note_type, github_issue_url, \
+         github_issue_number, is_resolved, created_at, updated_at \
+         FROM project_note_items WHERE id = ?",
+    )
+    .bind(&id)
+    .fetch_one(&db.0)
+    .await
+    .map_err(|e| format!("DB error: {e}"))?;
+
+    Ok(row_to_note_item(&row))
+}
+
+// --- App Preferences ---
+
+/// Get a preference value by key
+#[tauri::command]
+pub async fn get_preference(key: String, db: State<'_, DbState>) -> Result<Option<String>, String> {
+    let value: Option<String> =
+        sqlx::query_scalar("SELECT value FROM app_preferences WHERE key = ?")
+            .bind(&key)
+            .fetch_optional(&db.0)
+            .await
+            .map_err(|e| format!("DB error: {e}"))?
+            .flatten();
+    Ok(value)
+}
+
+/// Set a preference value by key
+#[tauri::command]
+pub async fn set_preference(
+    key: String,
+    value: String,
+    db: State<'_, DbState>,
+) -> Result<(), String> {
+    sqlx::query(
+        "INSERT INTO app_preferences (key, value) VALUES (?, ?) \
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+    )
+    .bind(&key)
+    .bind(&value)
+    .execute(&db.0)
+    .await
+    .map_err(|e| format!("Failed to set preference: {e}"))?;
+    Ok(())
 }

@@ -24,7 +24,7 @@ function IssueRow({ issue }: { issue: GitHubIssue }) {
     <div
       style={{
         padding: '8px 12px',
-        borderBottom: '1px solid #f0f0f0',
+        borderBottom: '1px solid var(--border-color)',
         display: 'flex',
         alignItems: 'flex-start',
         gap: 8,
@@ -86,7 +86,7 @@ export function IssuesPanel({ project }: IssuesPanelProps) {
       ) : issues.length === 0 ? (
         <Empty description="No open issues" image={Empty.PRESENTED_IMAGE_SIMPLE} />
       ) : (
-        <div style={{ border: '1px solid #f0f0f0', borderRadius: 6, overflow: 'hidden' }}>
+        <div style={{ border: '1px solid var(--border-color)', borderRadius: 6, overflow: 'hidden' }}>
           {issues.map((issue) => <IssueRow key={issue.number} issue={issue} />)}
         </div>
       )}

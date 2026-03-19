@@ -5,14 +5,14 @@ import {
   PlusOutlined,
   SettingOutlined,
 } from '@ant-design/icons';
-import { Button, Divider, Menu, Tooltip, Typography } from 'antd';
+import { Button, Divider, Menu, Typography } from 'antd';
 import { useWorkspaces } from '../../queries/use-workspaces-query';
 import { useAppStore } from '../../stores/app-store';
 
 const { Text } = Typography;
 
 export function Sidebar() {
-  const { activeWorkspaceId, setActiveWorkspaceId, activeView, setActiveView } = useAppStore();
+  const { activeWorkspaceId, setActiveWorkspaceId, activeView, setActiveView, setWorkspaceModalOpen } = useAppStore();
   const { data: workspaces = [] } = useWorkspaces();
 
   const workspaceItems = workspaces.map((ws) => ({
@@ -87,11 +87,14 @@ export function Sidebar() {
 
       {/* Bottom actions */}
       <div style={{ padding: '8px 12px 12px', display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <Tooltip title="Add Workspace" placement="right">
-          <Button type="text" icon={<PlusOutlined />} style={{ textAlign: 'left', width: '100%' }}>
-            New Workspace
-          </Button>
-        </Tooltip>
+        <Button
+          type="text"
+          icon={<PlusOutlined />}
+          style={{ textAlign: 'left', width: '100%' }}
+          onClick={() => setWorkspaceModalOpen(true)}
+        >
+          New Workspace
+        </Button>
         <Button
           type={activeView === 'settings' ? 'default' : 'text'}
           icon={<SettingOutlined />}

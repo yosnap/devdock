@@ -13,7 +13,7 @@ const CONFIG = {
   success: { icon: <CheckCircleFilled style={{ color: '#52c41a' }} />, label: 'CI passing' },
   failure: { icon: <CloseCircleFilled style={{ color: '#ff4d4f' }} />, label: 'CI failing' },
   running: { icon: <SyncOutlined spin style={{ color: '#faad14' }} />, label: 'CI running' },
-  unknown: { icon: <MinusCircleFilled style={{ color: '#bbb' }} />, label: 'CI unknown' },
+  unknown: { icon: <MinusCircleFilled style={{ color: 'var(--icon-muted)' }} />, label: 'CI unknown' },
 } as const;
 
 export function ActionsStatusBadge({ status, compact = false }: ActionsStatusBadgeProps) {

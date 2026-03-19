@@ -84,7 +84,7 @@ export function ProjectLinksList({ projectId }: ProjectLinksListProps) {
                 alignItems: 'center',
                 gap: 8,
                 padding: '6px 10px',
-                border: '1px solid #f0f0f0',
+                border: '1px solid var(--border-color)',
                 borderRadius: 6,
               }}
             >

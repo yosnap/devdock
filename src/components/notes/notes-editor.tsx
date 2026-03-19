@@ -114,7 +114,7 @@ export function NotesEditor({ projectId }: NotesEditorProps) {
             flex: 1,
             overflow: 'auto',
             padding: '8px 12px',
-            border: '1px solid #f0f0f0',
+            border: '1px solid var(--border-color)',
             borderRadius: 6,
             lineHeight: 1.7,
             fontSize: 14,
