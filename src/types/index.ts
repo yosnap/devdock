@@ -16,6 +16,10 @@ export interface Project {
   created_at: string;
   updated_at: string;
   tags?: string[];
+  // Phase 3 fields
+  health_score: number;      // -1 = not scored yet
+  github_owner?: string;
+  github_repo?: string;
 }
 
 export interface IdeConfig {
@@ -154,6 +158,70 @@ export interface UpsertLinkPayload {
   title: string;
   url: string;
   icon?: string;
+}
+
+// Phase 3: GitHub, Health, Quick Launch types
+
+export interface WorkflowRun {
+  id: number;
+  name: string;
+  status: string;
+  conclusion?: string;
+  html_url: string;
+  created_at: string;
+}
+
+export interface CiStatus {
+  overall: 'success' | 'failure' | 'running' | 'unknown';
+  runs: WorkflowRun[];
+}
+
+export interface GitHubIssue {
+  number: number;
+  title: string;
+  state: string;
+  html_url: string;
+  user_login: string;
+  created_at: string;
+  labels: string[];
+}
+
+export interface HealthConfig {
+  weight_deps_outdated: number;
+  weight_vulnerability: number;
+  weight_ci_failing: number;
+  weight_stale_30d: number;
+  weight_stale_90d: number;
+  weight_uncommitted: number;
+  weight_no_remote: number;
+  attention_threshold: number;
+}
+
+export interface HealthInput {
+  outdated_deps_count: number;
+  vulnerable_deps_count: number;
+  ci_failing: boolean;
+  days_since_commit?: number;
+  uncommitted_changes: number;
+  has_remote: boolean;
+}
+
+export interface HealthPenalty {
+  reason: string;
+  points: number;
+}
+
+export interface HealthResult {
+  score: number;
+  penalties: HealthPenalty[];
+}
+
+export interface QuickLaunchItem {
+  id: string;
+  name: string;
+  path: string;
+  stack?: string;
+  score: number;
 }
 
 // UI state types

@@ -1,5 +1,6 @@
 import {
   AppstoreOutlined,
+  ExclamationCircleOutlined,
   FolderOutlined,
   PlusOutlined,
   SettingOutlined,
@@ -26,6 +27,11 @@ export function Sidebar() {
       icon: <AppstoreOutlined />,
       label: 'All Projects',
     },
+    {
+      key: 'attention',
+      icon: <ExclamationCircleOutlined style={{ color: '#faad14' }} />,
+      label: 'Needs Attention',
+    },
     ...(workspaceItems.length > 0
       ? [
           { type: 'divider' as const },
@@ -43,11 +49,16 @@ export function Sidebar() {
       : []),
   ];
 
-  const selectedKey = activeView === 'dashboard' ? (activeWorkspaceId ?? 'all') : 'settings';
+  const selectedKey =
+    activeView === 'settings' ? 'settings' :
+    activeView === 'attention' ? 'attention' :
+    (activeWorkspaceId ?? 'all');
 
   function handleSelect({ key }: { key: string }) {
     if (key === 'settings') {
       setActiveView('settings');
+    } else if (key === 'attention') {
+      setActiveView('attention');
     } else {
       setActiveView('dashboard');
       setActiveWorkspaceId(key === 'all' ? null : key);

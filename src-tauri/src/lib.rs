@@ -57,6 +57,20 @@ pub fn run() {
             get_links,
             upsert_link,
             delete_link,
+            // GitHub commands
+            save_github_token,
+            get_github_token_status,
+            delete_github_token,
+            detect_github_repo,
+            get_ci_status,
+            get_issues,
+            create_issue,
+            // Health + Quick Launch commands
+            get_health_config,
+            save_health_config,
+            calculate_project_health,
+            get_projects_needing_attention,
+            quick_search_projects,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

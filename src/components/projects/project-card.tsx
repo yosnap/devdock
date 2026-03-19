@@ -9,6 +9,7 @@ import {
 import { Badge, Card, Space, Tag, Tooltip, Typography } from 'antd';
 import { useLaunchProject, useUpdateProject } from '../../queries/use-projects-query';
 import type { Project } from '../../types';
+import { HealthScoreBadge } from '../health/health-score-badge';
 import { stackColor, stackLabel } from './stack-utils';
 
 const { Text, Paragraph } = Typography;
@@ -70,12 +71,15 @@ export function ProjectCard({ project, onEdit, onDelete, onOpenDetail }: Project
               {project.name}
             </Text>
           </div>
-          <Tooltip title={project.is_favorite ? 'Remove favorite' : 'Add favorite'}>
-            {project.is_favorite
-              ? <HeartFilled onClick={toggleFavorite} style={{ color: '#ff4d4f', cursor: 'pointer' }} />
-              : <HeartOutlined onClick={toggleFavorite} style={{ cursor: 'pointer', color: '#bbb' }} />
-            }
-          </Tooltip>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+            <HealthScoreBadge score={project.health_score} size="small" />
+            <Tooltip title={project.is_favorite ? 'Remove favorite' : 'Add favorite'}>
+              {project.is_favorite
+                ? <HeartFilled onClick={toggleFavorite} style={{ color: '#ff4d4f', cursor: 'pointer' }} />
+                : <HeartOutlined onClick={toggleFavorite} style={{ cursor: 'pointer', color: '#bbb' }} />
+              }
+            </Tooltip>
+          </div>
         </div>
 
         {project.description && (

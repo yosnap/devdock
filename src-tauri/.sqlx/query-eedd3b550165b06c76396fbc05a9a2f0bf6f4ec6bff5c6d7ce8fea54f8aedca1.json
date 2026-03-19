@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE health_config SET\n           weight_deps_outdated = ?,\n           weight_vulnerability = ?,\n           weight_ci_failing = ?,\n           weight_stale_30d = ?,\n           weight_stale_90d = ?,\n           weight_uncommitted = ?,\n           weight_no_remote = ?,\n           attention_threshold = ?\n         WHERE id = 'default'",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 8
+    },
+    "nullable": []
+  },
+  "hash": "eedd3b550165b06c76396fbc05a9a2f0bf6f4ec6bff5c6d7ce8fea54f8aedca1"
+}
