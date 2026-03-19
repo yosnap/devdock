@@ -1,13 +1,36 @@
-/* CSS custom properties for consistent theming */
+/* ============================================================
+   CSS custom properties — light theme (default)
+   ============================================================ */
 :root {
   --border-color: #f0f0f0;
   --bg-base: #ffffff;
   --bg-hover: #fafafa;
   --bg-sidebar: #fafafa;
+  --scrollbar-thumb: #d9d9d9;
+  --scrollbar-thumb-hover: #bfbfbf;
   --content-max-width: 1400px;
+  --selected-bg: rgba(22, 119, 255, 0.12);
+  --icon-muted: rgba(0, 0, 0, 0.25);
 }
 
-/* Reset */
+/* ============================================================
+   Dark theme overrides — activated by use-theme.ts writing
+   data-theme="dark" on <html>
+   ============================================================ */
+[data-theme="dark"] {
+  --border-color: rgba(255, 255, 255, 0.1);
+  --bg-base: #141414;
+  --bg-hover: #1f1f1f;
+  --bg-sidebar: #1f1f1f;
+  --scrollbar-thumb: rgba(255, 255, 255, 0.2);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.35);
+  --selected-bg: rgba(22, 119, 255, 0.2);
+  --icon-muted: rgba(255, 255, 255, 0.3);
+}
+
+/* ============================================================
+   Reset
+   ============================================================ */
 *, *::before, *::after {
   box-sizing: border-box;
 }
@@ -20,24 +43,9 @@ html, body, #root {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Ant Design overrides */
-.ant-layout {
-  background: var(--bg-base);
-}
-
-.ant-layout-sider-light {
-  background: var(--bg-sidebar) !important;
-}
-
-.ant-menu-light {
-  background: transparent !important;
-}
-
-.ant-card {
-  border-color: var(--border-color);
-}
-
-/* Scrollbar styling */
+/* ============================================================
+   Scrollbar — uses theme variables
+   ============================================================ */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -48,10 +56,10 @@ html, body, #root {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #d9d9d9;
+  background: var(--scrollbar-thumb);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #bfbfbf;
+  background: var(--scrollbar-thumb-hover);
 }

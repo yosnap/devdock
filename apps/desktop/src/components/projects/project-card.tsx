@@ -6,8 +6,9 @@ import {
   HeartOutlined,
   RocketOutlined,
 } from '@ant-design/icons';
-import { Badge, Card, Space, Tag, Tooltip, Typography } from 'antd';
+import { Avatar, Badge, Card, Space, Tag, Tooltip, Typography } from 'antd';
 import { useLaunchProject, useUpdateProject } from '../../queries/use-projects-query';
+import { useAvatarUrl } from '../../hooks/use-avatar-url';
 import type { Project } from '../../types';
 import { HealthScoreBadge } from '../health/health-score-badge';
 import { stackColor, stackLabel } from './stack-utils';
@@ -24,6 +25,7 @@ interface ProjectCardProps {
 export function ProjectCard({ project, onEdit, onDelete, onOpenDetail }: ProjectCardProps) {
   const launch = useLaunchProject();
   const update = useUpdateProject();
+  const avatarUrl = useAvatarUrl(project.avatar);
 
   function toggleFavorite(e: React.MouseEvent) {
     e.stopPropagation();
@@ -66,7 +68,11 @@ export function ProjectCard({ project, onEdit, onDelete, onOpenDetail }: Project
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-            <FolderOpenOutlined style={{ fontSize: 18, color: '#1677ff', flexShrink: 0 }} />
+            {avatarUrl ? (
+              <Avatar size={28} src={avatarUrl} style={{ flexShrink: 0 }} />
+            ) : (
+              <FolderOpenOutlined style={{ fontSize: 18, color: '#1677ff', flexShrink: 0 }} />
+            )}
             <Text strong ellipsis style={{ fontSize: 14 }}>
               {project.name}
             </Text>
@@ -76,7 +82,7 @@ export function ProjectCard({ project, onEdit, onDelete, onOpenDetail }: Project
             <Tooltip title={project.is_favorite ? 'Remove favorite' : 'Add favorite'}>
               {project.is_favorite
                 ? <HeartFilled onClick={toggleFavorite} style={{ color: '#ff4d4f', cursor: 'pointer' }} />
-                : <HeartOutlined onClick={toggleFavorite} style={{ cursor: 'pointer', color: '#bbb' }} />
+                : <HeartOutlined onClick={toggleFavorite} style={{ cursor: 'pointer', color: 'var(--icon-muted)' }} />
               }
             </Tooltip>
           </div>

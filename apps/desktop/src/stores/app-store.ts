@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { ProjectFilters, ViewMode } from '../types';
+import type { AppTheme, ProjectFilters, ViewMode } from '../types';
 
 interface AppState {
   // View preferences
@@ -26,6 +26,14 @@ interface AppState {
   // Active settings tab
   activeSettingsTab: string;
   setActiveSettingsTab: (tab: string) => void;
+
+  // App theme — shared across all components
+  theme: AppTheme;
+  setThemeState: (theme: AppTheme) => void;
+
+  // Workspace modal trigger (from sidebar)
+  workspaceModalOpen: boolean;
+  setWorkspaceModalOpen: (open: boolean) => void;
 }
 
 const defaultFilters: ProjectFilters = {
@@ -60,4 +68,10 @@ export const useAppStore = create<AppState>((set) => ({
 
   activeSettingsTab: 'ides',
   setActiveSettingsTab: (tab) => set({ activeSettingsTab: tab }),
+
+  theme: 'light',
+  setThemeState: (theme) => set({ theme }),
+
+  workspaceModalOpen: false,
+  setWorkspaceModalOpen: (open) => set({ workspaceModalOpen: open }),
 }));

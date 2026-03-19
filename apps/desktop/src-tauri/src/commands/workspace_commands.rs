@@ -9,7 +9,7 @@ use uuid::Uuid;
 #[tauri::command]
 pub async fn list_workspaces(db: State<'_, DbState>) -> Result<Vec<Workspace>, String> {
     let rows = sqlx::query(
-        "SELECT id, name, color, icon, sort_order, created_at FROM workspaces ORDER BY sort_order ASC"
+        "SELECT id, name, color, icon, avatar, sort_order, created_at FROM workspaces ORDER BY sort_order ASC"
     )
     .fetch_all(&db.0)
     .await
@@ -22,6 +22,7 @@ pub async fn list_workspaces(db: State<'_, DbState>) -> Result<Vec<Workspace>, S
             name: row.get("name"),
             color: row.get("color"),
             icon: row.get("icon"),
+            avatar: row.get("avatar"),
             sort_order: row.get("sort_order"),
             created_at: row.get("created_at"),
         })
@@ -62,6 +63,7 @@ pub async fn create_workspace(
         name: payload.name,
         color: payload.color,
         icon: payload.icon,
+        avatar: None,
         sort_order,
         created_at: now,
     })
@@ -93,7 +95,7 @@ pub async fn update_workspace(
     .map_err(|e| format!("Failed to update workspace: {e}"))?;
 
     let row = sqlx::query(
-        "SELECT id, name, color, icon, sort_order, created_at FROM workspaces WHERE id = ?"
+        "SELECT id, name, color, icon, avatar, sort_order, created_at FROM workspaces WHERE id = ?"
     )
     .bind(&payload.id)
     .fetch_one(pool)
@@ -105,6 +107,7 @@ pub async fn update_workspace(
         name: row.get("name"),
         color: row.get("color"),
         icon: row.get("icon"),
+        avatar: row.get("avatar"),
         sort_order: row.get("sort_order"),
         created_at: row.get("created_at"),
     })

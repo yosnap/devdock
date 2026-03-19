@@ -42,6 +42,8 @@ pub struct Project {
     pub updated_at: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<Vec<String>>,
+    /// Avatar filename stored in app_data/avatars/
+    pub avatar: Option<String>,
 }
 
 /// Payload for creating a new project

@@ -1,5 +1,6 @@
 use crate::models::{CreateProjectPayload, Project, UpdateProjectPayload};
-use crate::services::{db_service::DbState, ide_launcher, project_scanner};
+use crate::services::{db_service::DbState, ide_launcher, project_scanner, tech_detector};
+use crate::services::tech_detector::TechBreakdown;
 use chrono::Utc;
 use sqlx::Row;
 use tauri::State;
@@ -12,7 +13,7 @@ pub async fn list_projects(db: State<'_, DbState>) -> Result<Vec<Project>, Strin
 
     let rows = sqlx::query(
         r#"SELECT id, name, path, description, stack, workspace_id, default_ide_id,
-           is_favorite, status, last_opened_at, created_at, updated_at
+           is_favorite, status, last_opened_at, created_at, updated_at, avatar
            FROM projects ORDER BY is_favorite DESC, last_opened_at DESC, name ASC"#,
     )
     .fetch_all(pool)
@@ -38,6 +39,7 @@ pub async fn list_projects(db: State<'_, DbState>) -> Result<Vec<Project>, Strin
             created_at: row.get("created_at"),
             updated_at: row.get("updated_at"),
             tags: Some(tags),
+            avatar: row.get("avatar"),
         });
     }
 
@@ -102,6 +104,7 @@ pub async fn add_project(
         created_at: now.clone(),
         updated_at: now,
         tags: payload.tags,
+        avatar: None,
     })
 }
 
@@ -232,7 +235,7 @@ async fn fetch_project_tags(pool: &sqlx::SqlitePool, project_id: &str) -> Result
 async fn get_project_by_id(pool: &sqlx::SqlitePool, id: &str) -> Result<Project, String> {
     let row = sqlx::query(
         r#"SELECT id, name, path, description, stack, workspace_id, default_ide_id,
-           is_favorite, status, last_opened_at, created_at, updated_at
+           is_favorite, status, last_opened_at, created_at, updated_at, avatar
            FROM projects WHERE id = ?"#,
     )
     .bind(id)
@@ -257,5 +260,12 @@ async fn get_project_by_id(pool: &sqlx::SqlitePool, id: &str) -> Result<Project,
         created_at: row.get("created_at"),
         updated_at: row.get("updated_at"),
         tags: Some(tags),
+        avatar: row.get("avatar"),
     })
+}
+
+/// Analyze a project directory and return detailed tech breakdown
+#[tauri::command]
+pub async fn analyze_project_tech(path: String) -> Result<TechBreakdown, String> {
+    Ok(tech_detector::detect_tech_breakdown(&path))
 }

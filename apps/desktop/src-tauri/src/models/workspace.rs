@@ -7,6 +7,8 @@ pub struct Workspace {
     pub name: String,
     pub color: Option<String>,
     pub icon: Option<String>,
+    /// Avatar filename stored in app_data/avatars/
+    pub avatar: Option<String>,
     pub sort_order: i32,
     pub created_at: String,
 }

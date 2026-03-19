@@ -33,6 +33,7 @@ pub fn run() {
             delete_project,
             launch_project,
             detect_project_stack,
+            analyze_project_tech,
             // IDE commands
             list_ides,
             create_ide,
@@ -58,6 +59,16 @@ pub fn run() {
             get_links,
             upsert_link,
             delete_link,
+            // Structured note items
+            list_note_items,
+            create_note_item,
+            update_note_item,
+            toggle_note_resolved,
+            delete_note_item,
+            link_note_to_issue,
+            // App preferences
+            get_preference,
+            set_preference,
             // GitHub commands
             save_github_token,
             get_github_token_status,
@@ -78,6 +89,10 @@ pub fn run() {
             install_update,
             export_config,
             import_config,
+            // Avatar commands
+            upload_avatar,
+            remove_avatar,
+            get_avatar_path,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

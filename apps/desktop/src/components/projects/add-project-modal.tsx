@@ -2,10 +2,12 @@ import { FolderOpenOutlined } from '@ant-design/icons';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { Form, Input, Modal, Select, Switch, notification } from 'antd';
 import { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { detectProjectStack } from '../../services/tauri-commands';
-import { useAddProject, useUpdateProject } from '../../queries/use-projects-query';
+import { useAddProject, useUpdateProject, PROJECT_KEYS } from '../../queries/use-projects-query';
 import { useIdes } from '../../queries/use-ides-query';
 import { useWorkspaces } from '../../queries/use-workspaces-query';
+import { AvatarPicker } from './avatar-picker';
 import type { Project } from '../../types';
 
 interface AddProjectModalProps {
@@ -40,6 +42,8 @@ const STACK_OPTIONS = [
 export function AddProjectModal({ open, project, onClose }: AddProjectModalProps) {
   const [form] = Form.useForm<FormValues>();
   const [detecting, setDetecting] = useState(false);
+  const [avatarOverride, setAvatarOverride] = useState<string | null | undefined>(undefined);
+  const qc = useQueryClient();
 
   const addProject = useAddProject();
   const updateProject = useUpdateProject();
@@ -47,6 +51,11 @@ export function AddProjectModal({ open, project, onClose }: AddProjectModalProps
   const { data: workspaces = [] } = useWorkspaces();
 
   const isEditing = Boolean(project);
+
+  // Reset avatar override when modal opens with different project
+  useEffect(() => {
+    setAvatarOverride(undefined);
+  }, [project?.id, open]);
 
   // Populate form when editing
   useEffect(() => {
@@ -165,6 +174,21 @@ export function AddProjectModal({ open, project, onClose }: AddProjectModalProps
         {isEditing && (
           <Form.Item label="Favorite" name="is_favorite" valuePropName="checked">
             <Switch />
+          </Form.Item>
+        )}
+        {isEditing && project && (
+          <Form.Item label="Imagen">
+            <AvatarPicker
+              entity="project"
+              entityId={project.id}
+              currentAvatar={avatarOverride === undefined ? project.avatar : (avatarOverride ?? undefined)}
+              entityName={project.name}
+              size={48}
+              onAvatarChange={async (f) => {
+                setAvatarOverride(f);
+                await qc.invalidateQueries({ queryKey: PROJECT_KEYS.all });
+              }}
+            />
           </Form.Item>
         )}
       </Form>

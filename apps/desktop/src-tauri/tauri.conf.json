@@ -23,21 +23,21 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": {
+        "default-src": "'self' ipc: http://ipc.localhost",
+        "img-src": "'self' asset: http://asset.localhost blob: data:",
+        "script-src": "'self'",
+        "style-src": "'self' 'unsafe-inline'"
+      },
+      "assetProtocol": {
+        "enable": true,
+        "scope": ["$APPDATA/**", "$HOME/**"]
+      }
     }
   },
   "plugins": {
     "shell": {
-      "open": true,
-      "scopes": [
-        { "name": "open-ide",       "cmd": "code",      "args": true },
-        { "name": "open-cursor",    "cmd": "cursor",    "args": true },
-        { "name": "open-zed",       "cmd": "zed",       "args": true },
-        { "name": "open-sublime",   "cmd": "subl",      "args": true },
-        { "name": "open-idea",      "cmd": "idea",      "args": true },
-        { "name": "open-webstorm",  "cmd": "webstorm",  "args": true },
-        { "name": "open-vim",       "cmd": "vim",       "args": true }
-      ]
+      "open": true
     },
     "updater": {
       "pubkey": "",

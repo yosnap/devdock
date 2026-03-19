@@ -43,8 +43,8 @@ export function NeedsAttentionView() {
               alignItems: 'center',
               gap: 12,
               padding: '10px 14px',
-              background: '#fff',
-              border: '1px solid #f0f0f0',
+              background: 'var(--bg-base)',
+              border: '1px solid var(--border-color)',
               borderRadius: 8,
             }}
           >
