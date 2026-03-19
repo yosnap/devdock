@@ -9,6 +9,7 @@ import { ProjectListItem } from './project-list-item';
 interface ProjectGridProps {
   onEdit: (project: Project) => void;
   onDelete: (project: Project) => void;
+  onOpenDetail?: (project: Project) => void;
 }
 
 /** Filter projects by the current app store filters */
@@ -26,7 +27,7 @@ function filterProjects(projects: Project[], filters: ProjectFilters): Project[]
   });
 }
 
-export function ProjectGrid({ onEdit, onDelete }: ProjectGridProps) {
+export function ProjectGrid({ onEdit, onDelete, onOpenDetail }: ProjectGridProps) {
   const { data: projects = [], isLoading } = useProjects();
   const { viewMode, filters } = useAppStore();
 
@@ -64,7 +65,7 @@ export function ProjectGrid({ onEdit, onDelete }: ProjectGridProps) {
     <Row gutter={[16, 16]} style={{ padding: 16 }}>
       {filtered.map((project) => (
         <Col key={project.id} xs={24} sm={12} md={8} lg={6} xl={6}>
-          <ProjectCard project={project} onEdit={onEdit} onDelete={onDelete} />
+          <ProjectCard project={project} onEdit={onEdit} onDelete={onDelete} onOpenDetail={onOpenDetail} />
         </Col>
       ))}
     </Row>
