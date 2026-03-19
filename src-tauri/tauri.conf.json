@@ -30,42 +30,21 @@
     "shell": {
       "open": true,
       "scopes": [
-        {
-          "name": "open-ide",
-          "cmd": "code",
-          "args": true
-        },
-        {
-          "name": "open-cursor",
-          "cmd": "cursor",
-          "args": true
-        },
-        {
-          "name": "open-zed",
-          "cmd": "zed",
-          "args": true
-        },
-        {
-          "name": "open-sublime",
-          "cmd": "subl",
-          "args": true
-        },
-        {
-          "name": "open-idea",
-          "cmd": "idea",
-          "args": true
-        },
-        {
-          "name": "open-webstorm",
-          "cmd": "webstorm",
-          "args": true
-        },
-        {
-          "name": "open-vim",
-          "cmd": "vim",
-          "args": true
-        }
+        { "name": "open-ide",       "cmd": "code",      "args": true },
+        { "name": "open-cursor",    "cmd": "cursor",    "args": true },
+        { "name": "open-zed",       "cmd": "zed",       "args": true },
+        { "name": "open-sublime",   "cmd": "subl",      "args": true },
+        { "name": "open-idea",      "cmd": "idea",      "args": true },
+        { "name": "open-webstorm",  "cmd": "webstorm",  "args": true },
+        { "name": "open-vim",       "cmd": "vim",       "args": true }
       ]
+    },
+    "updater": {
+      "pubkey": "",
+      "endpoints": [
+        "https://github.com/paulopinheiro/devdock/releases/latest/download/latest.json"
+      ],
+      "dialog": true
     }
   },
   "bundle": {
@@ -77,6 +56,19 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "macOS": {
+      "minimumSystemVersion": "11.0"
+    },
+    "windows": {
+      "nsis": {
+        "installMode": "perMachine"
+      }
+    },
+    "linux": {
+      "deb": {
+        "depends": ["libwebkit2gtk-4.1-0", "libgtk-3-0", "libayatana-appindicator3-1"]
+      }
+    }
   }
 }

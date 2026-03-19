@@ -156,3 +156,15 @@ export const getProjectsNeedingAttention = () =>
 
 export const quickSearchProjects = (query: string) =>
   invoke<QuickLaunchItem[]>('quick_search_projects', { query });
+
+// --- App info + Updater commands ---
+
+export interface AppInfo { version: string; name: string; }
+export interface UpdateInfo { available: boolean; version?: string; notes?: string; }
+export interface ImportResult { workspaces: number; ide_configs: number; projects: number; }
+
+export const getAppInfo = () => invoke<AppInfo>('get_app_info');
+export const checkForUpdate = () => invoke<UpdateInfo>('check_for_update');
+export const installUpdate = () => invoke<void>('install_update');
+export const exportConfig = () => invoke<string>('export_config');
+export const importConfig = (json: string) => invoke<ImportResult>('import_config', { json });
