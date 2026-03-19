@@ -1,15 +1,21 @@
 import { invoke } from '@tauri-apps/api/core';
 import type {
+  CiStatus,
   CreateIdePayload,
   CreateProjectPayload,
   CreateWorkspacePayload,
   Dependency,
+  GitHubIssue,
   GitInfo,
   GitStatus,
+  HealthConfig,
+  HealthInput,
+  HealthResult,
   IdeConfig,
   Project,
   ProjectLink,
   ProjectNote,
+  QuickLaunchItem,
   UpdateIdePayload,
   UpdateProjectPayload,
   UpdateWorkspacePayload,
@@ -108,3 +114,45 @@ export const updateWorkspace = (payload: UpdateWorkspacePayload) =>
 
 export const deleteWorkspace = (id: string) =>
   invoke<void>('delete_workspace', { id });
+
+// --- GitHub commands ---
+
+export const saveGithubToken = (token: string) =>
+  invoke<void>('save_github_token', { token });
+
+export const getGithubTokenStatus = () =>
+  invoke<boolean>('get_github_token_status');
+
+export const deleteGithubToken = () =>
+  invoke<void>('delete_github_token');
+
+export const detectGithubRepo = (projectId: string, remoteUrl: string) =>
+  invoke<[string, string]>('detect_github_repo', { projectId, remoteUrl });
+
+export const getCiStatus = (projectId: string, owner: string, repo: string) =>
+  invoke<CiStatus>('get_ci_status', { projectId, owner, repo });
+
+export const getIssues = (projectId: string, owner: string, repo: string) =>
+  invoke<GitHubIssue[]>('get_issues', { projectId, owner, repo });
+
+export const createIssue = (owner: string, repo: string, title: string, body: string, labels: string[]) =>
+  invoke<GitHubIssue>('create_issue', { owner, repo, title, body, labels });
+
+// --- Health commands ---
+
+export const getHealthConfig = () =>
+  invoke<HealthConfig>('get_health_config');
+
+export const saveHealthConfig = (config: HealthConfig) =>
+  invoke<void>('save_health_config', { config });
+
+export const calculateProjectHealth = (projectId: string, input: HealthInput) =>
+  invoke<HealthResult>('calculate_project_health', { projectId, input });
+
+export const getProjectsNeedingAttention = () =>
+  invoke<Array<{ id: string; name: string; path: string; stack?: string; health_score: number; status: string }>>('get_projects_needing_attention');
+
+// --- Quick Launch commands ---
+
+export const quickSearchProjects = (query: string) =>
+  invoke<QuickLaunchItem[]>('quick_search_projects', { query });

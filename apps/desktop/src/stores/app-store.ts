@@ -19,9 +19,9 @@ interface AppState {
   setFilters: (filters: Partial<ProjectFilters>) => void;
   resetFilters: () => void;
 
-  // Active view (dashboard, settings)
-  activeView: 'dashboard' | 'settings';
-  setActiveView: (view: 'dashboard' | 'settings') => void;
+  // Active view (dashboard, settings, attention)
+  activeView: 'dashboard' | 'settings' | 'attention';
+  setActiveView: (view: 'dashboard' | 'settings' | 'attention') => void;
 
   // Active settings tab
   activeSettingsTab: string;

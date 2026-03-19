@@ -1,13 +1,14 @@
 import { Layout, Modal, notification } from 'antd';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useDeleteProject } from '../../queries/use-projects-query';
 import { useAppStore } from '../../stores/app-store';
 import type { Project } from '../../types';
+import { NeedsAttentionView } from '../health/needs-attention-view';
 import { AddProjectModal } from '../projects/add-project-modal';
 import { ProjectDetailDrawer } from '../projects/project-detail-drawer';
 import { ProjectGrid } from '../projects/project-grid';
-import { IdeConfigPanel } from '../settings/ide-config-panel';
-import { WorkspaceManager } from '../workspaces/workspace-manager';
+import { QuickLaunchOverlay } from '../quick-launch/quick-launch-overlay';
+import { SettingsLayout } from '../settings/settings-layout';
 import { Sidebar } from './sidebar';
 import { TopBar } from './top-bar';
 
@@ -16,12 +17,25 @@ const { Sider, Content, Header } = Layout;
 const SIDEBAR_WIDTH = 220;
 
 export function AppLayout() {
-  const { activeView, activeSettingsTab } = useAppStore();
+  const { activeView } = useAppStore();
   const deleteProject = useDeleteProject();
 
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [detailProject, setDetailProject] = useState<Project | null>(null);
+  const [quickLaunchOpen, setQuickLaunchOpen] = useState(false);
+
+  // Global keyboard shortcut: Cmd/Ctrl+K → Quick Launch
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setQuickLaunchOpen((prev) => !prev);
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   function handleEdit(project: Project) {
     setDetailProject(null);
@@ -39,10 +53,6 @@ export function AppLayout() {
         notification.success({ message: 'Project deleted' });
       },
     });
-  }
-
-  function handleOpenDetail(project: Project) {
-    setDetailProject(project);
   }
 
   function handleModalClose() {
@@ -75,15 +85,13 @@ export function AppLayout() {
             <ProjectGrid
               onEdit={handleEdit}
               onDelete={handleDelete}
-              onOpenDetail={handleOpenDetail}
+              onOpenDetail={(p) => setDetailProject(p)}
             />
           )}
-          {activeView === 'settings' && (
-            <div style={{ padding: 24, maxWidth: 800 }}>
-              {activeSettingsTab === 'ides' && <IdeConfigPanel />}
-              {activeSettingsTab === 'workspaces' && <WorkspaceManager />}
-            </div>
-          )}
+
+          {activeView === 'attention' && <NeedsAttentionView />}
+
+          {activeView === 'settings' && <SettingsLayout />}
         </Content>
       </Layout>
 
@@ -100,6 +108,12 @@ export function AppLayout() {
         open={addModalOpen}
         project={editingProject}
         onClose={handleModalClose}
+      />
+
+      {/* Quick Launch overlay (Cmd/Ctrl+K) */}
+      <QuickLaunchOverlay
+        open={quickLaunchOpen}
+        onClose={() => setQuickLaunchOpen(false)}
       />
     </Layout>
   );
