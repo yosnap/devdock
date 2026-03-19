@@ -3,11 +3,17 @@ import type {
   CreateIdePayload,
   CreateProjectPayload,
   CreateWorkspacePayload,
+  Dependency,
+  GitInfo,
+  GitStatus,
   IdeConfig,
   Project,
+  ProjectLink,
+  ProjectNote,
   UpdateIdePayload,
   UpdateProjectPayload,
   UpdateWorkspacePayload,
+  UpsertLinkPayload,
   Workspace,
 } from '../types';
 
@@ -47,6 +53,47 @@ export const deleteIde = (id: string) =>
 
 export const setDefaultIde = (id: string) =>
   invoke<void>('set_default_ide', { id });
+
+// --- Git commands ---
+
+export const getGitStatus = (projectId: string) =>
+  invoke<GitInfo>('get_git_status', { projectId });
+
+export const getCachedGitStatus = (projectId: string) =>
+  invoke<GitStatus | null>('get_cached_git_status', { projectId });
+
+export const refreshProjectGit = (projectId: string) =>
+  invoke<GitInfo>('refresh_project_git', { projectId });
+
+// --- Deps commands ---
+
+export const getDeps = (projectId: string) =>
+  invoke<Dependency[]>('get_deps', { projectId });
+
+export const scanDeps = (projectId: string) =>
+  invoke<number>('scan_deps', { projectId });
+
+export const checkOutdated = (projectId: string) =>
+  invoke<number>('check_outdated', { projectId });
+
+// --- Notes commands ---
+
+export const getNotes = (projectId: string) =>
+  invoke<ProjectNote>('get_notes', { projectId });
+
+export const saveNotes = (projectId: string, content: string) =>
+  invoke<ProjectNote>('save_notes', { projectId, content });
+
+// --- Links commands ---
+
+export const getLinks = (projectId: string) =>
+  invoke<ProjectLink[]>('get_links', { projectId });
+
+export const upsertLink = (payload: UpsertLinkPayload) =>
+  invoke<ProjectLink>('upsert_link', { payload });
+
+export const deleteLink = (id: string) =>
+  invoke<void>('delete_link', { id });
 
 // --- Workspace commands ---
 

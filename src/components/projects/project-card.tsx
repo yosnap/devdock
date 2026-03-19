@@ -17,9 +17,10 @@ interface ProjectCardProps {
   project: Project;
   onEdit: (project: Project) => void;
   onDelete: (project: Project) => void;
+  onOpenDetail?: (project: Project) => void;
 }
 
-export function ProjectCard({ project, onEdit, onDelete }: ProjectCardProps) {
+export function ProjectCard({ project, onEdit, onDelete, onOpenDetail }: ProjectCardProps) {
   const launch = useLaunchProject();
   const update = useUpdateProject();
 
@@ -60,6 +61,7 @@ export function ProjectCard({ project, onEdit, onDelete }: ProjectCardProps) {
         actions={actions}
         style={{ height: '100%' }}
         styles={{ body: { padding: '12px 16px' } }}
+        onClick={() => onOpenDetail?.(project)}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
