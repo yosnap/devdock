@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO ide_configs (id, name, command, args, icon, is_default, sort_order)\n             VALUES (?, ?, ?, ?, ?, ?, ?)\n             ON CONFLICT(id) DO UPDATE SET name = excluded.name, command = excluded.command,\n               args = excluded.args, icon = excluded.icon, is_default = excluded.is_default,\n               sort_order = excluded.sort_order",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 7
+    },
+    "nullable": []
+  },
+  "hash": "eb97e81b71ec374b4b41462310f61fbbb0076cae7ef8f08969b0d5b51b590cb0"
+}

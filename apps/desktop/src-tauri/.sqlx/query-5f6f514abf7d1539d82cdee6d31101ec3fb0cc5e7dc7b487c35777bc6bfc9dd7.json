@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO projects\n               (id, name, path, description, stack, workspace_id, default_ide_id,\n                is_favorite, status, health_score, github_owner, github_repo)\n             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)\n             ON CONFLICT(id) DO UPDATE SET\n               name = excluded.name, path = excluded.path, description = excluded.description,\n               stack = excluded.stack, workspace_id = excluded.workspace_id,\n               default_ide_id = excluded.default_ide_id, is_favorite = excluded.is_favorite,\n               status = excluded.status,\n               health_score = excluded.health_score, github_owner = excluded.github_owner,\n               github_repo = excluded.github_repo",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 12
+    },
+    "nullable": []
+  },
+  "hash": "5f6f514abf7d1539d82cdee6d31101ec3fb0cc5e7dc7b487c35777bc6bfc9dd7"
+}

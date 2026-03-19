@@ -5,6 +5,7 @@ pub mod health_commands;
 pub mod ide_commands;
 pub mod notes_commands;
 pub mod project_commands;
+pub mod updater_commands;
 pub mod workspace_commands;
 
 pub use deps_commands::*;
@@ -14,4 +15,5 @@ pub use health_commands::*;
 pub use ide_commands::*;
 pub use notes_commands::*;
 pub use project_commands::*;
+pub use updater_commands::*;
 pub use workspace_commands::*;
