@@ -3,10 +3,11 @@ import {
   CodeOutlined,
   EditOutlined,
   FolderOutlined,
+  GithubOutlined,
   LinkOutlined,
   RocketOutlined,
 } from '@ant-design/icons';
-import { Avatar, Button, Descriptions, Divider, Drawer, Space, Tag, Tabs, Tooltip, Typography } from 'antd';
+import { App, Avatar, Button, Descriptions, Divider, Drawer, Space, Tag, Tabs, Tooltip, Typography } from 'antd';
 import { useState, useEffect } from 'react';
 import { ProjectLinksList } from '../links/project-links-list';
 import { NotesPanel } from '../notes/notes-panel';
@@ -16,7 +17,9 @@ import { ProjectGitBadge } from './project-git-badge';
 import { AvatarPicker } from './avatar-picker';
 import { stackColor, stackLabel } from './stack-utils';
 import { useQueryClient } from '@tanstack/react-query';
-import { useLaunchProject, PROJECT_KEYS } from '../../queries/use-projects-query';
+import { useLaunchProject, PROJECT_KEYS, useProjects } from '../../queries/use-projects-query';
+import { useDetectGithubRepo } from '../../queries/use-github-query';
+import { useGitStatus } from '../../queries/use-git-query';
 import { useAvatarUrl } from '../../hooks/use-avatar-url';
 import type { Project } from '../../types';
 
@@ -30,13 +33,19 @@ interface ProjectDetailDrawerProps {
 }
 
 export function ProjectDetailDrawer({
-  project,
+  project: projectProp,
   open,
   onClose,
   onEdit,
 }: ProjectDetailDrawerProps) {
+  const { message } = App.useApp();
   const launch = useLaunchProject();
   const qc = useQueryClient();
+  const detectRepo = useDetectGithubRepo();
+  // Always use the live version from query cache so updates (e.g. github_owner) reflect immediately
+  const { data: allProjects } = useProjects();
+  const project = (projectProp && allProjects?.find((p) => p.id === projectProp.id)) ?? projectProp;
+  const { data: git } = useGitStatus(project?.id ?? '');
   // Track local avatar override after upload (undefined = use project.avatar)
   const [avatarOverride, setAvatarOverride] = useState<string | null | undefined>(undefined);
 
@@ -49,6 +58,22 @@ export function ProjectDetailDrawer({
     ? project?.avatar
     : (avatarOverride ?? undefined);
   const avatarUrl = useAvatarUrl(currentAvatar);
+
+  async function handleDetectRepo() {
+    if (!project) return;
+    const remoteUrl = git?.remote_url;
+    if (!remoteUrl) {
+      message.error('No se encontró remote URL en el repositorio git.');
+      return;
+    }
+    try {
+      await detectRepo.mutateAsync({ projectId: project.id, remoteUrl });
+      await qc.invalidateQueries({ queryKey: PROJECT_KEYS.all });
+      message.success('Repositorio de GitHub vinculado correctamente.');
+    } catch (e) {
+      message.error(String(e));
+    }
+  }
 
   if (!project) return null;
 
@@ -118,6 +143,22 @@ export function ProjectDetailDrawer({
       children: (
         <div style={{ padding: '4px 0' }}>
           <ProjectGitBadge projectId={project.id} />
+          <div style={{ marginTop: 16 }}>
+            {project.github_owner && project.github_repo ? (
+              <Tag icon={<GithubOutlined />} color="geekblue">
+                {project.github_owner}/{project.github_repo}
+              </Tag>
+            ) : (
+              <Button
+                icon={<GithubOutlined />}
+                size="small"
+                loading={detectRepo.isPending}
+                onClick={handleDetectRepo}
+              >
+                Vincular con GitHub
+              </Button>
+            )}
+          </div>
         </div>
       ),
     },

@@ -1,9 +1,9 @@
-/// Modal for creating or editing a structured note item.
+/// Modal for creating or editing a structured note item with markdown editor.
+import MDEditor from '@uiw/react-md-editor';
 import { Form, Input, Modal, Select } from 'antd';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useAppStore } from '../../stores/app-store';
 import type { NoteItem, NoteType } from '../../types';
-
-const { TextArea } = Input;
 
 const NOTE_TYPE_OPTIONS: { value: NoteType; label: string }[] = [
   { value: 'note',     label: '📝 Nota' },
@@ -28,21 +28,31 @@ interface CreateNoteModalProps {
 
 export function CreateNoteModal({ open, editingNote, onSubmit, onCancel }: CreateNoteModalProps) {
   const [form] = Form.useForm<NoteFormValues>();
+  const [content, setContent] = useState('');
+  const theme = useAppStore((s) => s.theme);
 
   useEffect(() => {
     if (open) {
       form.setFieldsValue(
         editingNote
-          ? { title: editingNote.title, content: editingNote.content, note_type: editingNote.note_type as NoteType }
-          : { title: '', content: '', note_type: 'note' }
+          ? { title: editingNote.title, note_type: editingNote.note_type as NoteType }
+          : { title: '', note_type: 'note' }
       );
+      setContent(editingNote?.content ?? '');
     }
   }, [open, editingNote, form]);
 
   const handleOk = async () => {
     const values = await form.validateFields();
-    await onSubmit(values);
+    await onSubmit({ ...values, content });
     form.resetFields();
+    setContent('');
+  };
+
+  const handleCancel = () => {
+    form.resetFields();
+    setContent('');
+    onCancel();
   };
 
   return (
@@ -50,18 +60,14 @@ export function CreateNoteModal({ open, editingNote, onSubmit, onCancel }: Creat
       title={editingNote ? 'Editar nota' : 'Nueva nota'}
       open={open}
       onOk={handleOk}
-      onCancel={onCancel}
+      onCancel={handleCancel}
       okText={editingNote ? 'Guardar' : 'Crear'}
       cancelText="Cancelar"
-      width={520}
+      width={580}
       destroyOnClose
     >
       <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
-        <Form.Item
-          name="note_type"
-          label="Tipo"
-          rules={[{ required: true }]}
-        >
+        <Form.Item name="note_type" label="Tipo" rules={[{ required: true }]}>
           <Select options={NOTE_TYPE_OPTIONS} />
         </Form.Item>
         <Form.Item
@@ -71,13 +77,15 @@ export function CreateNoteModal({ open, editingNote, onSubmit, onCancel }: Creat
         >
           <Input placeholder="Título de la nota..." maxLength={200} />
         </Form.Item>
-        <Form.Item name="content" label="Descripción">
-          <TextArea
-            rows={4}
-            placeholder="Detalles, contexto, pasos para reproducir..."
-            maxLength={2000}
-            showCount
-          />
+        <Form.Item label="Descripción">
+          <div data-color-mode={theme === 'dark' ? 'dark' : theme === 'auto' ? 'auto' : 'light'}>
+            <MDEditor
+              value={content}
+              onChange={(val) => setContent(val ?? '')}
+              height={220}
+              preview="edit"
+            />
+          </div>
         </Form.Item>
       </Form>
     </Modal>

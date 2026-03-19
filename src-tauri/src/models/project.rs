@@ -44,6 +44,10 @@ pub struct Project {
     pub tags: Option<Vec<String>>,
     /// Avatar filename stored in app_data/avatars/
     pub avatar: Option<String>,
+    /// GitHub repository owner (e.g. "yosnap")
+    pub github_owner: Option<String>,
+    /// GitHub repository name (e.g. "devdock")
+    pub github_repo: Option<String>,
 }
 
 /// Payload for creating a new project

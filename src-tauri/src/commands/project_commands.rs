@@ -13,7 +13,8 @@ pub async fn list_projects(db: State<'_, DbState>) -> Result<Vec<Project>, Strin
 
     let rows = sqlx::query(
         r#"SELECT id, name, path, description, stack, workspace_id, default_ide_id,
-           is_favorite, status, last_opened_at, created_at, updated_at, avatar
+           is_favorite, status, last_opened_at, created_at, updated_at, avatar,
+           github_owner, github_repo
            FROM projects ORDER BY is_favorite DESC, last_opened_at DESC, name ASC"#,
     )
     .fetch_all(pool)
@@ -40,6 +41,8 @@ pub async fn list_projects(db: State<'_, DbState>) -> Result<Vec<Project>, Strin
             updated_at: row.get("updated_at"),
             tags: Some(tags),
             avatar: row.get("avatar"),
+            github_owner: row.get("github_owner"),
+            github_repo: row.get("github_repo"),
         });
     }
 
@@ -105,6 +108,8 @@ pub async fn add_project(
         updated_at: now,
         tags: payload.tags,
         avatar: None,
+        github_owner: None,
+        github_repo: None,
     })
 }
 
@@ -235,7 +240,8 @@ async fn fetch_project_tags(pool: &sqlx::SqlitePool, project_id: &str) -> Result
 async fn get_project_by_id(pool: &sqlx::SqlitePool, id: &str) -> Result<Project, String> {
     let row = sqlx::query(
         r#"SELECT id, name, path, description, stack, workspace_id, default_ide_id,
-           is_favorite, status, last_opened_at, created_at, updated_at, avatar
+           is_favorite, status, last_opened_at, created_at, updated_at, avatar,
+           github_owner, github_repo
            FROM projects WHERE id = ?"#,
     )
     .bind(id)
@@ -261,6 +267,8 @@ async fn get_project_by_id(pool: &sqlx::SqlitePool, id: &str) -> Result<Project,
         updated_at: row.get("updated_at"),
         tags: Some(tags),
         avatar: row.get("avatar"),
+        github_owner: row.get("github_owner"),
+        github_repo: row.get("github_repo"),
     })
 }
 

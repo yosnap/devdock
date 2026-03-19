@@ -93,6 +93,14 @@ export function NotesPanel({ projectId, githubOwner, githubRepo }: NotesPanelPro
     setModalOpen(true);
   };
 
+  const handleOpenIssueModal = (note: NoteItem) => {
+    if (!githubOwner || !githubRepo) {
+      message.error('Este proyecto no tiene un repositorio de GitHub vinculado. Detecta el repo desde la pestaña GitHub.');
+      return;
+    }
+    setIssueNote(note);
+  };
+
   const handleCreateIssue = async (title: string, body: string, labels: string[]) => {
     if (!issueNote || !githubOwner || !githubRepo) return;
     setIssueLoading(true);
@@ -157,7 +165,7 @@ export function NotesPanel({ projectId, githubOwner, githubRepo }: NotesPanelPro
           onEdit={handleEdit}
           onDelete={(id) => deleteMut.mutate(id)}
           onToggleResolved={(id) => toggleMut.mutate(id)}
-          onCreateIssue={(n) => setIssueNote(n)}
+          onCreateIssue={handleOpenIssueModal}
         />
       ))}
 
@@ -174,6 +182,8 @@ export function NotesPanel({ projectId, githubOwner, githubRepo }: NotesPanelPro
           owner={githubOwner}
           repo={githubRepo}
           loading={issueLoading}
+          initialTitle={issueNote.title}
+          initialBody={issueNote.content ?? ''}
           onCreate={handleCreateIssue}
           onClose={() => setIssueNote(null)}
         />
