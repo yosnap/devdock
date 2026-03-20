@@ -1,0 +1,31 @@
+{
+  "name": "@devdock/web",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@devdock/api-client": "workspace:*",
+    "@devdock/hooks": "workspace:*",
+    "@devdock/types": "workspace:*",
+    "@ant-design/icons": "^6.1.0",
+    "@supabase/supabase-js": "^2.50.5",
+    "@tanstack/react-query": "^5.91.0",
+    "antd": "^6.3.3",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-router-dom": "^7.13.1",
+    "zustand": "^5.0.12"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@vitejs/plugin-react": "^4.6.0",
+    "typescript": "~5.8.3",
+    "vite": "^7.0.4"
+  }
+}
