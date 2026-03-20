@@ -4,6 +4,8 @@ use keyring::Entry;
 
 const SERVICE: &str = "devdock";
 const GITHUB_TOKEN_KEY: &str = "github_token";
+const SUPABASE_ACCESS_TOKEN_KEY: &str = "supabase_access_token";
+const SUPABASE_REFRESH_TOKEN_KEY: &str = "supabase_refresh_token";
 
 /// Store a GitHub PAT/OAuth token in the OS keychain.
 pub fn store_github_token(token: &str) -> Result<(), String> {
@@ -19,6 +21,50 @@ pub fn get_github_token() -> Result<Option<String>, String> {
         Err(keyring::Error::NoEntry) => Ok(None),
         Err(e) => Err(e.to_string()),
     }
+}
+
+/// Store Supabase JWT access token in the OS keychain.
+pub fn store_supabase_token(token: &str) -> Result<(), String> {
+    let entry = Entry::new(SERVICE, SUPABASE_ACCESS_TOKEN_KEY).map_err(|e| e.to_string())?;
+    entry.set_password(token).map_err(|e| e.to_string())
+}
+
+/// Retrieve stored Supabase access token. Returns None if not found.
+pub fn get_supabase_token() -> Result<Option<String>, String> {
+    let entry = Entry::new(SERVICE, SUPABASE_ACCESS_TOKEN_KEY).map_err(|e| e.to_string())?;
+    match entry.get_password() {
+        Ok(token) => Ok(Some(token)),
+        Err(keyring::Error::NoEntry) => Ok(None),
+        Err(e) => Err(e.to_string()),
+    }
+}
+
+/// Store Supabase refresh token in the OS keychain.
+pub fn store_supabase_refresh_token(token: &str) -> Result<(), String> {
+    let entry = Entry::new(SERVICE, SUPABASE_REFRESH_TOKEN_KEY).map_err(|e| e.to_string())?;
+    entry.set_password(token).map_err(|e| e.to_string())
+}
+
+/// Retrieve stored Supabase refresh token. Returns None if not found.
+pub fn get_supabase_refresh_token() -> Result<Option<String>, String> {
+    let entry = Entry::new(SERVICE, SUPABASE_REFRESH_TOKEN_KEY).map_err(|e| e.to_string())?;
+    match entry.get_password() {
+        Ok(token) => Ok(Some(token)),
+        Err(keyring::Error::NoEntry) => Ok(None),
+        Err(e) => Err(e.to_string()),
+    }
+}
+
+/// Remove all Supabase credentials from the keychain (logout).
+pub fn delete_supabase_tokens() -> Result<(), String> {
+    for key in [SUPABASE_ACCESS_TOKEN_KEY, SUPABASE_REFRESH_TOKEN_KEY] {
+        let entry = Entry::new(SERVICE, key).map_err(|e| e.to_string())?;
+        match entry.delete_credential() {
+            Ok(()) | Err(keyring::Error::NoEntry) => {}
+            Err(e) => return Err(e.to_string()),
+        }
+    }
+    Ok(())
 }
 
 /// Remove the stored GitHub token from the keychain (logout).
