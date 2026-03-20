@@ -56,7 +56,7 @@ export function QuickCreateWorkspaceModal() {
               presets={[{ label: 'Colores', colors: COLOR_PRESETS }]}
               onChange={(c) => setColor(c.toHexString())}
             />
-            <div style={{ width: 24, height: 24, borderRadius: 4, background: color, border: '1px solid #eee' }} />
+            <div style={{ width: 24, height: 24, borderRadius: 4, background: color, border: '1px solid var(--border-color)' }} />
             <Typography.Text type="secondary" style={{ fontSize: 12 }}>{color}</Typography.Text>
           </Space>
         </Form.Item>

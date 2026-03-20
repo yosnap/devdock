@@ -113,7 +113,7 @@ export function WorkspaceManager() {
       dataIndex: 'color',
       width: 80,
       render: (color: string) => (
-        <div style={{ width: 20, height: 20, borderRadius: 4, background: color ?? '#1677ff', border: '1px solid #eee' }} />
+        <div style={{ width: 20, height: 20, borderRadius: 4, background: color ?? '#1677ff', border: '1px solid var(--border-color)' }} />
       ),
     },
     {
@@ -185,7 +185,7 @@ export function WorkspaceManager() {
                   height: 24,
                   borderRadius: 4,
                   background: selectedColor,
-                  border: '1px solid #eee',
+                  border: '1px solid var(--border-color)',
                 }}
               />
               <Text type="secondary" style={{ fontSize: 12 }}>{selectedColor}</Text>

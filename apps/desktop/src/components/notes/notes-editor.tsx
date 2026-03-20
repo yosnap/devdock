@@ -27,7 +27,7 @@ function renderMarkdown(md: string): string {
     .replace(/\n\n+/g, '</p><p>')
     .replace(/^(?!<[hul])(.+)$/gm, '$1<br>')
     .replace(/^<br>$/gm, '')
-    || '<em style="color:#bbb">No content yet…</em>';
+    || '<em style="color:var(--icon-muted)">No content yet…</em>';
 }
 
 const AUTOSAVE_DELAY = 1500; // ms

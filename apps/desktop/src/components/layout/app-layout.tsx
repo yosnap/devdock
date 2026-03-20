@@ -66,7 +66,7 @@ export function AppLayout() {
   }
 
   return (
-    <Layout style={{ height: '100vh', overflow: 'hidden' }}>
+    <Layout style={{ height: '100vh', overflow: 'hidden', background: 'var(--bg-base)' }}>
       {/* Sidebar */}
       <Sider
         width={SIDEBAR_WIDTH}
@@ -76,16 +76,16 @@ export function AppLayout() {
         <Sidebar />
       </Sider>
 
-      <Layout>
+      <Layout style={{ background: 'var(--bg-base)' }}>
         {/* Top bar — only on dashboard */}
         {activeView === 'dashboard' && (
-          <Header style={{ padding: 0, height: 'auto', lineHeight: 'normal', background: 'transparent' }}>
+          <Header style={{ padding: 0, height: 'auto', lineHeight: 'normal', background: 'var(--bg-base)' }}>
             <TopBar onAddProject={() => setAddModalOpen(true)} onSignInClick={() => setLoginModalOpen(true)} />
           </Header>
         )}
 
         {/* Main content */}
-        <Content style={{ overflow: 'auto' }}>
+        <Content style={{ overflow: 'auto', background: 'var(--bg-base)' }}>
           {activeView === 'dashboard' && (
             <ProjectGrid
               onEdit={handleEdit}

@@ -26,3 +26,7 @@ dist-ssr
 # Agent artifacts
 .agents/
 skills-lock.json
+
+# Sibling app artifacts visible from this repo
+../web/vite.config.d.ts
+../web/vite.config.js
