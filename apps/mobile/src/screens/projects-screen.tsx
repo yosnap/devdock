@@ -13,8 +13,8 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useProjects } from '@devdock/hooks';
-import { useWorkspaces } from '@devdock/hooks';
+import { useProjects } from '../hooks/use-projects';
+import { useWorkspaces } from '../hooks/use-workspaces';
 import { ProjectListItem } from '../components/project-list-item';
 import { AddProjectModal } from '../components/add-project-modal';
 import type { Project } from '@devdock/types';

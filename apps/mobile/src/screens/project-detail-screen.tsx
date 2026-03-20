@@ -15,16 +15,9 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { Project } from '@devdock/types';
-import {
-  useNoteItems,
-  useCreateNoteItem,
-  useDeleteNoteItem,
-  useToggleNoteResolved,
-  useLinks,
-  useUpsertLink,
-  useDeleteLink,
-  useUpdateProject,
-} from '@devdock/hooks';
+import { useNoteItems, useCreateNoteItem, useDeleteNoteItem, useToggleNoteResolved } from '../hooks/use-notes';
+import { useLinks, useUpsertLink, useDeleteLink } from '../hooks/use-links';
+import { useUpdateProject } from '../hooks/use-projects';
 import { HealthScoreBadge } from '../components/health-score-badge';
 import { NoteItemRow } from '../components/note-item-row';
 
@@ -83,7 +76,7 @@ export function ProjectDetailScreen({ project, workspaceName }: Props) {
   function handleDeleteLink(id: string) {
     Alert.alert('Delete link', 'Remove this link?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => deleteLink.mutate({ id, projectId: project.id }) },
+      { text: 'Delete', style: 'destructive', onPress: () => deleteLink.mutate(id) },
     ]);
   }
 
@@ -214,7 +207,7 @@ export function ProjectDetailScreen({ project, workspaceName }: Props) {
                   <NoteItemRow
                     note={item}
                     onToggleResolved={() => toggleResolved.mutate(item.id)}
-                    onDelete={() => deleteNote.mutate({ id: item.id, projectId: project.id })}
+                    onDelete={() => deleteNote.mutate(item.id)}
                   />
                 )}
                 ListEmptyComponent={<View style={styles.empty}><Text style={styles.emptyText}>No notes yet.</Text></View>}

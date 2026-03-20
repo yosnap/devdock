@@ -13,7 +13,7 @@ import {
   ScrollView,
 } from 'react-native';
 import type { Workspace } from '@devdock/types';
-import { useAddProject } from '@devdock/hooks';
+import { useAddProject } from '../hooks/use-projects';
 
 interface Props {
   visible: boolean;

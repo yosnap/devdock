@@ -11,10 +11,11 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/hooks/use-auth';
 
 export default function LoginScreen() {
-  const { signInWithEmail, signUpWithEmail } = useAuth();
+  const { signInWithEmail, signUpWithEmail, signInWithGitHub } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
@@ -77,6 +78,17 @@ export default function LoginScreen() {
           }
         </TouchableOpacity>
 
+        <View style={styles.divider}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>or</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        <TouchableOpacity style={styles.githubButton} onPress={signInWithGitHub}>
+          <Ionicons name="logo-github" size={20} color="#fff" />
+          <Text style={styles.githubButtonText}>Continue with GitHub</Text>
+        </TouchableOpacity>
+
         <TouchableOpacity onPress={() => { setIsSignUp(!isSignUp); setError(null); }}>
           <Text style={styles.toggle}>
             {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
@@ -113,5 +125,19 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   buttonText: { color: '#fff', fontWeight: '600', fontSize: 15 },
+  divider: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: '#334155' },
+  dividerText: { color: '#64748b', fontSize: 12, marginHorizontal: 12 },
+  githubButton: {
+    backgroundColor: '#24292e',
+    borderRadius: 8,
+    paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 16,
+  },
+  githubButtonText: { color: '#fff', fontWeight: '600', fontSize: 15 },
   toggle: { color: '#818cf8', textAlign: 'center', fontSize: 13 },
 });

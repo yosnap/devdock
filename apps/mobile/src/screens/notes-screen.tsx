@@ -10,7 +10,8 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import { useProjects, useNoteItems, useToggleNoteResolved, useDeleteNoteItem } from '@devdock/hooks';
+import { useProjects } from '../hooks/use-projects';
+import { useNoteItems, useToggleNoteResolved, useDeleteNoteItem } from '../hooks/use-notes';
 import { NoteItemRow } from '../components/note-item-row';
 
 export function NotesScreen() {
@@ -19,7 +20,7 @@ export function NotesScreen() {
 
   // Use first project or selected project for note fetching
   const activeProjectId = selectedProjectId ?? projects[0]?.id ?? '';
-  const { data: notes = [], isLoading: loadingNotes } = useNoteItems(activeProjectId, Boolean(activeProjectId));
+  const { data: notes = [], isLoading: loadingNotes } = useNoteItems(activeProjectId);
   const toggleResolved = useToggleNoteResolved();
   const deleteNote = useDeleteNoteItem();
 
@@ -71,7 +72,7 @@ export function NotesScreen() {
             <NoteItemRow
               note={item}
               onToggleResolved={() => toggleResolved.mutate(item.id)}
-              onDelete={() => deleteNote.mutate({ id: item.id, projectId: activeProjectId })}
+              onDelete={() => deleteNote.mutate(item.id)}
             />
           )}
           ListEmptyComponent={

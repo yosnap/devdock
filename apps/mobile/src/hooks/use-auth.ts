@@ -34,10 +34,23 @@ export function useAuth() {
     if (error) throw error;
   }
 
+  async function signInWithGitHub() {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'github',
+      options: { redirectTo: 'devdock://auth/callback' },
+    });
+    if (error) throw error;
+    // Open the URL in the system browser
+    if (data.url) {
+      const { Linking } = require('react-native');
+      await Linking.openURL(data.url);
+    }
+  }
+
   async function signOut() {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
   }
 
-  return { session, loading, signInWithEmail, signUpWithEmail, signOut };
+  return { session, loading, signInWithEmail, signUpWithEmail, signInWithGitHub, signOut };
 }

@@ -13,8 +13,8 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useWorkspaces, useCreateWorkspace, useDeleteWorkspace } from '@devdock/hooks';
-import { useProjects } from '@devdock/hooks';
+import { useWorkspaces, useCreateWorkspace, useDeleteWorkspace } from '../hooks/use-workspaces';
+import { useProjects } from '../hooks/use-projects';
 import type { Workspace } from '@devdock/types';
 
 const COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899'];

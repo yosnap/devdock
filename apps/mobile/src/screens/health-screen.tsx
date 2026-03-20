@@ -2,7 +2,7 @@
 
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useProjectsNeedingAttention } from '@devdock/hooks';
+import { useProjectsNeedingAttention } from '../hooks/use-health';
 import { HealthScoreBadge } from '../components/health-score-badge';
 
 export function HealthScreen() {
