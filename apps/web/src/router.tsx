@@ -2,6 +2,7 @@
 import { createBrowserRouter } from 'react-router-dom';
 import { AuthGuard } from './components/auth/auth-guard';
 import { WebAppLayout } from './components/layout/web-app-layout';
+import { AuthCallbackPage } from './pages/auth-callback-page';
 import { LoginPage } from './pages/login-page';
 import { ProjectsPage } from './pages/projects-page';
 import { ProjectDetailPage } from './pages/project-detail-page';
@@ -11,10 +12,9 @@ import { HealthDashboardPage } from './pages/health-dashboard-page';
 import { SettingsPage } from './pages/settings-page';
 
 export const router = createBrowserRouter([
-  {
-    path: '/login',
-    element: <LoginPage />,
-  },
+  { path: '/login', element: <LoginPage /> },
+  // OAuth redirect lands here — processes token before AuthGuard runs
+  { path: '/auth/callback', element: <AuthCallbackPage /> },
   {
     element: <AuthGuard />,
     children: [
