@@ -42,12 +42,17 @@ pub struct Project {
     pub updated_at: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<Vec<String>>,
+    /// Health score 0-100, -1 = not scored yet
+    pub health_score: i32,
     /// Avatar filename stored in app_data/avatars/
     pub avatar: Option<String>,
     /// GitHub repository owner (e.g. "yosnap")
     pub github_owner: Option<String>,
     /// GitHub repository name (e.g. "devdock")
     pub github_repo: Option<String>,
+    /// Detected tech breakdown JSON (frameworks, databases, orms, etc.)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tech_breakdown: Option<String>,
 }
 
 /// Payload for creating a new project

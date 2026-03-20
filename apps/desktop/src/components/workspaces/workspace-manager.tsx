@@ -1,10 +1,9 @@
 import {
   DeleteOutlined,
   EditOutlined,
-  FolderOutlined,
   PlusOutlined,
 } from '@ant-design/icons';
-import { Avatar, Button, ColorPicker, Form, Input, Modal, Space, Table, Tooltip, Typography, notification } from 'antd';
+import { Button, ColorPicker, Form, Input, Modal, Space, Table, Tooltip, Typography, notification } from 'antd';
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -15,7 +14,7 @@ import {
   WORKSPACE_KEYS,
 } from '@devdock/hooks';
 import { AvatarPicker } from '../projects/avatar-picker';
-import { useAvatarUrl } from '../../hooks/use-avatar-url';
+import { WorkspaceIcon } from './workspace-icon';
 import type { Workspace } from '@devdock/types';
 
 const { Text } = Typography;
@@ -27,16 +26,11 @@ interface WorkspaceFormValues {
   name: string;
 }
 
-/** Row cell that resolves avatar URL via hook (hooks require a component boundary) */
+/** Row cell showing workspace avatar/icon/color + name */
 function WorkspaceNameCell({ ws }: { ws: Workspace }) {
-  const avatarUrl = useAvatarUrl(ws.avatar);
   return (
     <Space>
-      {avatarUrl ? (
-        <Avatar size={28} src={avatarUrl} />
-      ) : (
-        <FolderOutlined style={{ color: ws.color ?? '#1677ff' }} />
-      )}
+      <WorkspaceIcon workspace={ws} size={28} />
       <Text strong>{ws.name}</Text>
     </Space>
   );

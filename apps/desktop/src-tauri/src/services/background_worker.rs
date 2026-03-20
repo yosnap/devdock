@@ -1,5 +1,5 @@
 use crate::models::Ecosystem;
-use crate::services::{deps_analyzer, git_service, registry_client};
+use crate::services::{deps_analyzer, git_service, health_calculator, registry_client, tech_detector};
 use chrono::Utc;
 use sqlx::SqlitePool;
 use std::sync::Arc;
@@ -36,27 +36,105 @@ pub fn start_background_worker(pool: SqlitePool) -> WorkerHandle {
     stop_flag
 }
 
-/// Scan git status and deps for all active projects
+/// Scan git status, deps, and tech breakdown for all active projects
 async fn scan_all_projects(pool: &SqlitePool) -> Result<(), String> {
-    let rows = sqlx::query("SELECT id, path, stack FROM projects WHERE status = 'active'")
-        .fetch_all(pool)
-        .await
-        .map_err(|e| format!("DB error: {e}"))?;
+    let rows = sqlx::query(
+        "SELECT id, path, stack, tech_breakdown FROM projects WHERE status = 'active'"
+    )
+    .fetch_all(pool)
+    .await
+    .map_err(|e| format!("DB error: {e}"))?;
 
     for row in rows {
         use sqlx::Row;
         let project_id: String = row.get("id");
         let path: String = row.get("path");
         let stack: Option<String> = row.get("stack");
+        let existing_tb: Option<String> = row.get("tech_breakdown");
 
         // Git status scan (fast, local)
         refresh_git_status(pool, &project_id, &path).await;
 
         // Deps scan (parse local files, no network)
         refresh_deps(pool, &project_id, &path, stack.as_deref()).await;
+
+        // Backfill tech_breakdown if missing
+        if existing_tb.is_none() {
+            let tb = tech_detector::detect_tech_breakdown(&path);
+            if let Ok(json) = serde_json::to_string(&tb) {
+                let _ = sqlx::query("UPDATE projects SET tech_breakdown = ? WHERE id = ?")
+                    .bind(&json)
+                    .bind(&project_id)
+                    .execute(pool)
+                    .await;
+            }
+        }
+
+        // Auto-calculate health score from cached git + deps data
+        calculate_health_from_cache(pool, &project_id).await;
     }
 
     Ok(())
+}
+
+/// Build HealthInput from cached git_status + deps data, then compute and save score.
+async fn calculate_health_from_cache(pool: &SqlitePool, project_id: &str) {
+    use sqlx::Row;
+
+    // Read cached git status
+    let git_row = sqlx::query(
+        "SELECT uncommitted_count, remote_url, last_commit_date FROM project_git_status WHERE project_id = ?"
+    )
+    .bind(project_id)
+    .fetch_optional(pool)
+    .await
+    .ok()
+    .flatten();
+
+    let (uncommitted, has_remote, days_since) = if let Some(row) = git_row {
+        let uncommitted: i32 = row.get::<i64, _>("uncommitted_count") as i32;
+        let remote: Option<String> = row.get("remote_url");
+        let last_date: Option<String> = row.get("last_commit_date");
+        let days = last_date.and_then(|d| {
+            chrono::DateTime::parse_from_rfc3339(&d)
+                .or_else(|_| chrono::DateTime::parse_from_str(&d, "%Y-%m-%d %H:%M:%S %z"))
+                .ok()
+                .map(|dt| (Utc::now() - dt.with_timezone(&Utc)).num_days())
+        });
+        (uncommitted, remote.is_some() && !remote.as_ref().unwrap().is_empty(), days)
+    } else {
+        (0, false, None)
+    };
+
+    // Count outdated deps
+    let outdated: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM project_deps WHERE project_id = ? AND is_outdated = 1"
+    )
+    .bind(project_id)
+    .fetch_one(pool)
+    .await
+    .unwrap_or(0);
+
+    let vulnerable: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM project_deps WHERE project_id = ? AND has_vulnerability = 1"
+    )
+    .bind(project_id)
+    .fetch_one(pool)
+    .await
+    .unwrap_or(0);
+
+    let input = health_calculator::HealthInput {
+        outdated_deps_count: outdated as i32,
+        vulnerable_deps_count: vulnerable as i32,
+        ci_failing: false, // CI status requires network — skip in background
+        days_since_commit: days_since,
+        uncommitted_changes: uncommitted,
+        has_remote,
+    };
+
+    let cfg = health_calculator::get_health_config(pool).await;
+    let result = health_calculator::calculate_health(&input, &cfg);
+    let _ = health_calculator::update_project_health_score(pool, project_id, result.score).await;
 }
 
 /// Update git status cache for one project

@@ -56,7 +56,9 @@ pub fn run() {
                 ));
 
                 // Start outbound sync worker
-                start_sync_worker(pool.clone(), supabase.clone(), handle.clone());
+                let app_data = handle.path().app_data_dir().expect("app_data_dir");
+                let avatars_dir = app_data.join("avatars");
+                start_sync_worker(pool.clone(), supabase.clone(), handle.clone(), avatars_dir);
 
                 // Pull remote changes if user is authenticated
                 if !access_token.is_empty() {

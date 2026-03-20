@@ -48,8 +48,8 @@ export const launchProject = (id: string) =>
 export const detectProjectStack = (path: string) =>
   invoke<string | null>('detect_project_stack', { path });
 
-export const analyzeProjectTech = (path: string) =>
-  invoke<TechBreakdown>('analyze_project_tech', { path });
+export const analyzeProjectTech = (id: string, path: string) =>
+  invoke<TechBreakdown>('analyze_project_tech', { id, path });
 
 // --- IDE commands ---
 

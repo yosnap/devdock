@@ -11,6 +11,7 @@ import {
 } from '@devdock/hooks';
 import type { Workspace } from '@devdock/types';
 import { useNavigate } from 'react-router-dom';
+import { WorkspaceIcon } from '../components/shared/workspace-icon';
 
 const { Title, Text } = Typography;
 const CONTENT_MAX_WIDTH = 1200;
@@ -136,10 +137,7 @@ export function WorkspacesPage() {
                   ]}
                 >
                   <Space>
-                    <span style={{
-                      width: 14, height: 14, borderRadius: '50%',
-                      background: ws.color ?? '#1677ff', display: 'inline-block', flexShrink: 0,
-                    }} />
+                    <WorkspaceIcon workspace={ws} size={28} />
                     <Text strong>{ws.name}</Text>
                   </Space>
                   <div style={{ marginTop: 8 }}>

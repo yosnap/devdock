@@ -22,6 +22,7 @@ export interface Project {
   health_score: number; // -1 = not scored yet
   github_owner?: string;
   github_repo?: string;
+  tech_breakdown?: TechBreakdown;
 }
 
 export interface Workspace {
@@ -175,13 +176,19 @@ export interface GitHubIssue {
   labels: string[];
 }
 
+export interface TechItem {
+  name: string;
+  version?: string;
+}
+
 export interface TechBreakdown {
   language?: string;
-  frameworks: string[];
-  databases: string[];
-  orms: string[];
-  testing: string[];
-  devops: string[];
+  version?: string;
+  frameworks: TechItem[];
+  databases: TechItem[];
+  orms: TechItem[];
+  testing: TechItem[];
+  devops: TechItem[];
 }
 
 // Summary type for health dashboard

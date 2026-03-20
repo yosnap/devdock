@@ -134,7 +134,7 @@ export function ProjectDetailDrawer({
             }}
           />
           <Divider style={{ marginTop: 16 }}>Tech Stack</Divider>
-          <ProjectTechBreakdown path={project.path} />
+          <ProjectTechBreakdown id={project.id} path={project.path} />
         </>
       ),
     },

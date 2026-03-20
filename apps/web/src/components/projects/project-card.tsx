@@ -1,4 +1,4 @@
-/// Web project card — no IDE launch, no path display, no Tauri deps.
+/// Web project card — same layout as desktop but without IDE launch or path.
 import {
   DeleteOutlined,
   EditOutlined,
@@ -6,10 +6,11 @@ import {
   HeartFilled,
   HeartOutlined,
 } from '@ant-design/icons';
-import { Badge, Card, Space, Tag, Tooltip, Typography } from 'antd';
+import { Avatar, Badge, Card, Space, Tag, Tooltip, Typography } from 'antd';
 import { useUpdateProject } from '@devdock/hooks';
 import type { Project } from '@devdock/types';
 import { HealthScoreBadge } from '../shared/health-score-badge';
+import { TechStackBadges } from '../shared/tech-stack-badges';
 import { stackColor, stackLabel } from '../shared/stack-utils';
 import { useNavigate } from 'react-router-dom';
 
@@ -57,16 +58,20 @@ export function ProjectCard({ project, workspaceColor, onEdit, onDelete }: Proje
         styles={{ body: { padding: '12px 16px' } }}
         onClick={() => navigate(`/projects/${project.id}`)}
       >
-        {/* Header row */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+        {/* Row 1: Avatar + Name + Health + Favorite */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
             {workspaceColor && (
               <span style={{
                 width: 8, height: 8, borderRadius: '50%',
                 background: workspaceColor, flexShrink: 0,
               }} />
             )}
-            <FolderOpenOutlined style={{ fontSize: 16, color: '#1677ff', flexShrink: 0 }} />
+            {project.avatar ? (
+              <Avatar size={24} src={project.avatar} style={{ flexShrink: 0 }} />
+            ) : (
+              <FolderOpenOutlined style={{ fontSize: 16, color: '#1677ff', flexShrink: 0 }} />
+            )}
             <Text strong ellipsis style={{ fontSize: 14 }}>{project.name}</Text>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
@@ -80,21 +85,35 @@ export function ProjectCard({ project, workspaceColor, onEdit, onDelete }: Proje
           </div>
         </div>
 
-        {/* Description */}
+        {/* Row 2: App version */}
+        {project.tech_breakdown?.version && (
+          <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 4, paddingLeft: 34 }}>
+            v{project.tech_breakdown.version}
+          </Text>
+        )}
+
+        {/* Row 3: Description */}
         {project.description && (
           <Paragraph
             type="secondary"
             ellipsis={{ rows: 2 }}
-            style={{ fontSize: 12, marginBottom: 8, minHeight: 32 }}
+            style={{ fontSize: 12, marginBottom: 6, minHeight: 32 }}
           >
             {project.description}
           </Paragraph>
         )}
 
-        {/* Tags */}
-        <div style={{ marginTop: 8 }}>
+        {/* Row 4: Tech logos + versions */}
+        {project.tech_breakdown && (
+          <div style={{ marginBottom: 6 }}>
+            <TechStackBadges breakdown={project.tech_breakdown} />
+          </div>
+        )}
+
+        {/* Row 5: Tags */}
+        <div>
           <Space size={4} wrap>
-            {project.stack && (
+            {!project.tech_breakdown && project.stack && (
               <Tag color={stackColor(project.stack)} style={{ margin: 0 }}>
                 {stackLabel(project.stack)}
               </Tag>

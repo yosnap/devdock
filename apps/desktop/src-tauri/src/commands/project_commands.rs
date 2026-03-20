@@ -14,8 +14,8 @@ pub async fn list_projects(db: State<'_, DbState>) -> Result<Vec<Project>, Strin
 
     let rows = sqlx::query(
         r#"SELECT id, name, path, description, stack, workspace_id, default_ide_id,
-           is_favorite, status, last_opened_at, created_at, updated_at, avatar,
-           github_owner, github_repo
+           is_favorite, status, last_opened_at, created_at, updated_at, health_score, avatar,
+           github_owner, github_repo, tech_breakdown
            FROM projects ORDER BY is_favorite DESC, last_opened_at DESC, name ASC"#,
     )
     .fetch_all(pool)
@@ -41,9 +41,11 @@ pub async fn list_projects(db: State<'_, DbState>) -> Result<Vec<Project>, Strin
             created_at: row.get("created_at"),
             updated_at: row.get("updated_at"),
             tags: Some(tags),
+            health_score: row.get::<i64, _>("health_score") as i32,
             avatar: row.get("avatar"),
             github_owner: row.get("github_owner"),
             github_repo: row.get("github_repo"),
+            tech_breakdown: row.get("tech_breakdown"),
         });
     }
 
@@ -65,9 +67,13 @@ pub async fn add_project(
         project_scanner::detect_stack(&payload.path).map(|d| d.stack)
     });
 
+    // Auto-detect tech breakdown
+    let tech = tech_detector::detect_tech_breakdown(&payload.path);
+    let tech_json = serde_json::to_string(&tech).ok();
+
     sqlx::query(
-        r#"INSERT INTO projects (id, name, path, description, stack, workspace_id, default_ide_id, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"#,
+        r#"INSERT INTO projects (id, name, path, description, stack, workspace_id, default_ide_id, tech_breakdown, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"#,
     )
     .bind(&id)
     .bind(&payload.name)
@@ -76,6 +82,7 @@ pub async fn add_project(
     .bind(&stack)
     .bind(&payload.workspace_id)
     .bind(&payload.default_ide_id)
+    .bind(&tech_json)
     .bind(&now)
     .bind(&now)
     .execute(pool)
@@ -126,9 +133,11 @@ pub async fn add_project(
         created_at: now.clone(),
         updated_at: now,
         tags: payload.tags,
+        health_score: -1,
         avatar: None,
         github_owner: None,
         github_repo: None,
+        tech_breakdown: tech_json,
     })
 }
 
@@ -184,30 +193,39 @@ pub async fn update_project(
         }
     }
 
-    // Enqueue for cloud sync
+    // Fetch full project for sync and return
+    let project = get_project_by_id(pool, &payload.id).await?;
+
+    // Enqueue full project row for cloud sync (parser needs all fields)
     {
         let pool_clone = pool.clone();
-        let record_id = payload.id.clone();
-        let update_json = serde_json::json!({
-            "id": &payload.id,
-            "name": &payload.name,
-            "description": &payload.description,
-            "stack": &payload.stack,
-            "workspace_id": &payload.workspace_id,
-            "is_favorite": payload.is_favorite,
-            "status": &payload.status,
-            "updated_at": &now,
-        });
+        let p = project.clone();
         tokio::spawn(async move {
+            let user_id: String = sqlx::query_scalar(
+                "SELECT COALESCE((SELECT value FROM app_preferences WHERE key='user_id'),'')"
+            )
+            .fetch_one(&pool_clone)
+            .await
+            .unwrap_or_default();
+
+            let payload = serde_json::json!({
+                "id": p.id, "user_id": user_id, "name": p.name,
+                "description": p.description, "stack": p.stack,
+                "workspace_id": p.workspace_id,
+                "is_favorite": p.is_favorite, "status": p.status,
+                "health_score": -1, // will be recalculated
+                "github_owner": p.github_owner, "github_repo": p.github_repo,
+                "avatar": p.avatar, "tech_breakdown": p.tech_breakdown,
+                "created_at": p.created_at, "updated_at": p.updated_at,
+            });
             let _ = sync_queue::enqueue(
-                &pool_clone, "projects", &record_id,
-                "UPDATE", Some(update_json.to_string()),
+                &pool_clone, "projects", &p.id,
+                "UPDATE", Some(payload.to_string()),
             ).await;
         });
     }
 
-    // Return updated project
-    get_project_by_id(pool, &payload.id).await
+    Ok(project)
 }
 
 /// Delete a project by ID
@@ -294,8 +312,8 @@ async fn fetch_project_tags(pool: &sqlx::SqlitePool, project_id: &str) -> Result
 async fn get_project_by_id(pool: &sqlx::SqlitePool, id: &str) -> Result<Project, String> {
     let row = sqlx::query(
         r#"SELECT id, name, path, description, stack, workspace_id, default_ide_id,
-           is_favorite, status, last_opened_at, created_at, updated_at, avatar,
-           github_owner, github_repo
+           is_favorite, status, last_opened_at, created_at, updated_at, health_score, avatar,
+           github_owner, github_repo, tech_breakdown
            FROM projects WHERE id = ?"#,
     )
     .bind(id)
@@ -320,14 +338,28 @@ async fn get_project_by_id(pool: &sqlx::SqlitePool, id: &str) -> Result<Project,
         created_at: row.get("created_at"),
         updated_at: row.get("updated_at"),
         tags: Some(tags),
+        health_score: row.get::<i64, _>("health_score") as i32,
         avatar: row.get("avatar"),
         github_owner: row.get("github_owner"),
         github_repo: row.get("github_repo"),
+        tech_breakdown: row.get("tech_breakdown"),
     })
 }
 
-/// Analyze a project directory and return detailed tech breakdown
+/// Analyze a project directory, save to DB, and return detailed tech breakdown
 #[tauri::command]
-pub async fn analyze_project_tech(path: String) -> Result<TechBreakdown, String> {
-    Ok(tech_detector::detect_tech_breakdown(&path))
+pub async fn analyze_project_tech(
+    id: String,
+    path: String,
+    db: State<'_, DbState>,
+) -> Result<TechBreakdown, String> {
+    let breakdown = tech_detector::detect_tech_breakdown(&path);
+    let json = serde_json::to_string(&breakdown).map_err(|e| e.to_string())?;
+    sqlx::query("UPDATE projects SET tech_breakdown = ? WHERE id = ?")
+        .bind(&json)
+        .bind(&id)
+        .execute(&db.0)
+        .await
+        .map_err(|e| format!("Failed to save tech_breakdown: {e}"))?;
+    Ok(breakdown)
 }

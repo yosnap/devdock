@@ -3,7 +3,7 @@ use crate::services::db_service::DbState;
 use crate::sync::{startup_sync, sync_queue, supabase_client::SupabaseClient};
 use serde::Serialize;
 use std::sync::Arc;
-use tauri::State;
+use tauri::{AppHandle, Manager, State};
 
 /// Shared Supabase client managed by Tauri state
 pub struct SupabaseState(pub Arc<SupabaseClient>);
@@ -54,13 +54,16 @@ pub async fn clear_sync_queue(db: State<'_, DbState>) -> Result<(), String> {
 /// Requires a valid Supabase session stored in SupabaseState.
 #[tauri::command]
 pub async fn force_sync(
+    app: AppHandle,
     db: State<'_, DbState>,
     supabase: State<'_, SupabaseState>,
 ) -> Result<(), String> {
     let pool = &db.0;
     let client = &supabase.0;
+    let avatars_dir = app.path().app_data_dir()
+        .map_err(|e| format!("app_data_dir error: {e}"))?
+        .join("avatars");
 
-    // Read user_id from app_preferences (set at login)
     let user_id: Option<String> = sqlx::query_scalar(
         "SELECT value FROM app_preferences WHERE key = 'user_id'",
     )
@@ -84,6 +87,7 @@ pub async fn force_sync(
             &item.table_name,
             &item.operation,
             &item.payload,
+            &avatars_dir,
         )
         .await;
 

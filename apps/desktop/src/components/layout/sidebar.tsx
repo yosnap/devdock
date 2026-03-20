@@ -1,24 +1,41 @@
 import {
   AppstoreOutlined,
   ExclamationCircleOutlined,
-  FolderOutlined,
   PlusOutlined,
   SettingOutlined,
 } from '@ant-design/icons';
-import { Button, Divider, Menu, Typography } from 'antd';
-import { useWorkspaces } from '@devdock/hooks';
+import { Badge, Button, Divider, Menu, Typography } from 'antd';
+import { useMemo } from 'react';
+import { useProjects, useWorkspaces } from '@devdock/hooks';
 import { useAppStore } from '../../stores/app-store';
+import { WorkspaceIcon } from '../workspaces/workspace-icon';
 
 const { Text } = Typography;
 
 export function Sidebar() {
   const { activeWorkspaceId, setActiveWorkspaceId, activeView, setActiveView, setWorkspaceModalOpen } = useAppStore();
   const { data: workspaces = [] } = useWorkspaces();
+  const { data: projects = [] } = useProjects();
+
+  const projectCountMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    projects.forEach((p) => {
+      if (p.workspace_id) map[p.workspace_id] = (map[p.workspace_id] ?? 0) + 1;
+    });
+    return map;
+  }, [projects]);
 
   const workspaceItems = workspaces.map((ws) => ({
     key: ws.id,
-    icon: <FolderOutlined style={{ color: ws.color ?? '#1677ff' }} />,
-    label: ws.name,
+    icon: <WorkspaceIcon workspace={ws} size={20} />,
+    label: (
+      <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span>{ws.name}</span>
+        <Badge count={projectCountMap[ws.id] ?? 0} showZero={false}
+          style={{ backgroundColor: 'var(--border-color)', color: 'var(--icon-muted)', fontSize: 10, boxShadow: 'none' }}
+        />
+      </span>
+    ),
   }));
 
   const menuItems = [

@@ -64,7 +64,7 @@ export function ProjectGrid({ onEdit, onDelete, onOpenDetail }: ProjectGridProps
   return (
     <Row gutter={[16, 16]} style={{ padding: 16 }}>
       {filtered.map((project) => (
-        <Col key={project.id} xs={24} sm={12} md={8} lg={6} xl={6}>
+        <Col key={project.id} xs={24} sm={12} lg={8}>
           <ProjectCard project={project} onEdit={onEdit} onDelete={onDelete} onOpenDetail={onOpenDetail} />
         </Col>
       ))}

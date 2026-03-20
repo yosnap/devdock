@@ -2,6 +2,7 @@
 /// Emits Tauri events: sync:progress, sync:error, sync:complete.
 use crate::sync::{supabase_client::SupabaseClient, sync_queue};
 use sqlx::SqlitePool;
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 use tauri::{AppHandle, Emitter};
@@ -10,12 +11,16 @@ const POLL_INTERVAL_SECS: u64 = 5;
 const BATCH_SIZE: i64 = 50;
 
 /// Spawn the background sync task. Call once after db + supabase init.
-pub fn start_sync_worker(pool: SqlitePool, supabase: Arc<SupabaseClient>, app: AppHandle) {
+pub fn start_sync_worker(
+    pool: SqlitePool,
+    supabase: Arc<SupabaseClient>,
+    app: AppHandle,
+    avatars_dir: PathBuf,
+) {
     tokio::spawn(async move {
         loop {
-            // Skip processing when offline — avoids pointless HTTP errors
             if supabase.check_connectivity().await {
-                if let Err(e) = process_queue(&pool, &supabase, &app).await {
+                if let Err(e) = process_queue(&pool, &supabase, &app, &avatars_dir).await {
                     eprintln!("[sync_worker] queue error: {e}");
                     let _ = app.emit("sync:error", serde_json::json!({ "error": e }));
                 }
@@ -30,6 +35,7 @@ async fn process_queue(
     pool: &SqlitePool,
     supabase: &SupabaseClient,
     app: &AppHandle,
+    avatars_dir: &PathBuf,
 ) -> Result<(), String> {
     let items = sync_queue::dequeue_batch(pool, BATCH_SIZE).await?;
 
@@ -43,7 +49,7 @@ async fn process_queue(
     let mut completed_ids: Vec<i64> = Vec::new();
 
     for item in items {
-        let result = dispatch_item(supabase, &item.table_name, &item.operation, &item.payload).await;
+        let result = dispatch_item(supabase, &item.table_name, &item.operation, &item.payload, avatars_dir).await;
 
         match result {
             Ok(()) => {
@@ -80,8 +86,39 @@ pub async fn dispatch_sync_item(
     table_name: &str,
     operation: &str,
     payload: &Option<String>,
+    avatars_dir: &PathBuf,
 ) -> Result<(), String> {
-    dispatch_item(supabase, table_name, operation, payload).await
+    dispatch_item(supabase, table_name, operation, payload, avatars_dir).await
+}
+
+/// Upload a local avatar file to Supabase Storage if it exists, return public URL.
+async fn upload_avatar_if_local(
+    supabase: &SupabaseClient,
+    avatar: &str,
+    user_id: &str,
+    avatars_dir: &PathBuf,
+) -> Option<String> {
+    // Already a URL — skip upload
+    if avatar.starts_with("http") {
+        return Some(avatar.to_string());
+    }
+    let file_path = avatars_dir.join(avatar);
+    if !file_path.exists() {
+        return Some(avatar.to_string()); // keep filename, file may not exist
+    }
+    match tokio::fs::read(&file_path).await {
+        Ok(data) => match supabase.upload_avatar_file(user_id, avatar, data).await {
+            Ok(url) => Some(url),
+            Err(e) => {
+                eprintln!("[sync_worker] avatar upload failed: {e}");
+                Some(avatar.to_string())
+            }
+        },
+        Err(e) => {
+            eprintln!("[sync_worker] avatar read failed: {e}");
+            Some(avatar.to_string())
+        }
+    }
 }
 
 /// Route a queue item to the correct Supabase call based on table + operation.
@@ -90,10 +127,10 @@ async fn dispatch_item(
     table_name: &str,
     operation: &str,
     payload: &Option<String>,
+    avatars_dir: &PathBuf,
 ) -> Result<(), String> {
     match operation {
         "DELETE" => {
-            // payload holds the record id for soft-delete
             let id = payload
                 .as_deref()
                 .ok_or_else(|| "DELETE item missing payload (record id)".to_string())?;
@@ -108,11 +145,17 @@ async fn dispatch_item(
 
             match table_name {
                 "projects" => {
-                    let p = parse_project_sync(&value)?;
+                    let mut p = parse_project_sync(&value)?;
+                    if let Some(ref av) = p.avatar {
+                        p.avatar = upload_avatar_if_local(supabase, av, &p.user_id, avatars_dir).await;
+                    }
                     supabase.upsert_project(&p).await
                 }
                 "workspaces" => {
-                    let w = parse_workspace_sync(&value)?;
+                    let mut w = parse_workspace_sync(&value)?;
+                    if let Some(ref av) = w.avatar {
+                        w.avatar = upload_avatar_if_local(supabase, av, &w.user_id, avatars_dir).await;
+                    }
                     supabase.upsert_workspace(&w).await
                 }
                 "project_note_items" => {
@@ -159,6 +202,9 @@ fn parse_project_sync(v: &serde_json::Value) -> Result<ProjectSync, String> {
         github_owner: get_opt_str(v, "github_owner"),
         github_repo: get_opt_str(v, "github_repo"),
         avatar: get_opt_str(v, "avatar"),
+        tech_breakdown: v["tech_breakdown"].as_str()
+            .and_then(|s| serde_json::from_str(s).ok())
+            .or_else(|| v["tech_breakdown"].as_object().map(|_| v["tech_breakdown"].clone())),
         last_opened_at: get_opt_str(v, "last_opened_at"),
         deleted_at: get_opt_str(v, "deleted_at"),
         created_at: get_str(v, "created_at").unwrap_or_else(|_| chrono::Utc::now().to_rfc3339()),
@@ -173,6 +219,7 @@ fn parse_workspace_sync(v: &serde_json::Value) -> Result<WorkspaceSync, String> 
         name: get_str(v, "name")?,
         color: get_opt_str(v, "color"),
         icon: get_opt_str(v, "icon"),
+        avatar: get_opt_str(v, "avatar"),
         sort_order: v["sort_order"].as_i64().unwrap_or(0) as i32,
         created_at: get_str(v, "created_at").unwrap_or_else(|_| chrono::Utc::now().to_rfc3339()),
     })

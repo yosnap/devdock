@@ -93,9 +93,18 @@ pub async fn sign_in_with_email(
         supabase.0.set_access_token(user.access_token.clone()).await;
     }
 
-    // Backfill user_id into pending sync_queue items (created before login)
+    // Save user_id to app_preferences + backfill sync_queue
     if let Ok(db) = app.try_state::<DbState>().ok_or(()) {
         let uid = user.id.clone();
+        // Persist user_id for sync worker and background tasks
+        let _ = sqlx::query(
+            "INSERT OR REPLACE INTO app_preferences (key, value) VALUES ('user_id', ?)"
+        )
+        .bind(&uid)
+        .execute(&db.0)
+        .await;
+
+        // Backfill user_id into pending sync_queue items (created before login)
         let _ = sqlx::query(
             "UPDATE sync_queue SET payload = json_set(payload, '$.user_id', ?)
              WHERE operation IN ('INSERT','UPDATE') AND json_extract(payload, '$.user_id') IS NULL"
@@ -337,9 +346,16 @@ pub async fn handle_oauth_callback(app: &tauri::AppHandle, url: &str) -> Result<
         supabase.0.set_access_token(auth_user.access_token.clone()).await;
     }
 
-    // Backfill user_id into pending sync_queue items (created before login)
+    // Save user_id + backfill sync_queue
     if let Ok(db) = app.try_state::<DbState>().ok_or(()) {
         let uid = auth_user.id.clone();
+        let _ = sqlx::query(
+            "INSERT OR REPLACE INTO app_preferences (key, value) VALUES ('user_id', ?)"
+        )
+        .bind(&uid)
+        .execute(&db.0)
+        .await;
+
         let _ = sqlx::query(
             "UPDATE sync_queue SET payload = json_set(payload, '$.user_id', ?)
              WHERE operation IN ('INSERT','UPDATE') AND json_extract(payload, '$.user_id') IS NULL"

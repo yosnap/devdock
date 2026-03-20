@@ -6,6 +6,7 @@ use crate::services::health_calculator::{
     self, HealthConfig, HealthInput, HealthResult,
 };
 use crate::services::quick_launch::{self, QuickLaunchItem};
+use crate::sync::sync_queue;
 
 // ── Health config ─────────────────────────────────────────────────────────────
 
@@ -32,9 +33,45 @@ pub async fn calculate_project_health(
     input: HealthInput,
     db: State<'_, DbState>,
 ) -> Result<HealthResult, String> {
-    let cfg = health_calculator::get_health_config(&db.0).await;
+    let pool = &db.0;
+    let cfg = health_calculator::get_health_config(pool).await;
     let result = health_calculator::calculate_health(&input, &cfg);
-    health_calculator::update_project_health_score(&db.0, &project_id, result.score).await?;
+    health_calculator::update_project_health_score(pool, &project_id, result.score).await?;
+
+    // Enqueue health_score update for cloud sync (full row needed by parser)
+    {
+        let pool_clone = pool.clone();
+        let pid = project_id.clone();
+        let score = result.score;
+        tokio::spawn(async move {
+            // Fetch minimal required fields for sync parser
+            let row = sqlx::query_as::<_, (String, String, String, Option<String>, Option<String>, bool, String, Option<String>, Option<String>, Option<String>, Option<String>, String, String)>(
+                "SELECT id, name, COALESCE((SELECT value FROM app_preferences WHERE key='user_id'),''), \
+                 description, stack, is_favorite, status, workspace_id, github_owner, github_repo, avatar, \
+                 created_at, updated_at FROM projects WHERE id = ?"
+            )
+            .bind(&pid)
+            .fetch_optional(&pool_clone)
+            .await;
+
+            if let Ok(Some(r)) = row {
+                let payload = serde_json::json!({
+                    "id": r.0, "name": r.1, "user_id": r.2,
+                    "description": r.3, "stack": r.4,
+                    "is_favorite": r.5, "status": r.6,
+                    "workspace_id": r.7, "github_owner": r.8,
+                    "github_repo": r.9, "avatar": r.10,
+                    "health_score": score,
+                    "created_at": r.11, "updated_at": r.12,
+                });
+                let _ = sync_queue::enqueue(
+                    &pool_clone, "projects", &pid,
+                    "UPDATE", Some(payload.to_string()),
+                ).await;
+            }
+        });
+    }
+
     Ok(result)
 }
 

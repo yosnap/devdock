@@ -22,6 +22,7 @@ pub struct ProjectSync {
     pub github_owner: Option<String>,
     pub github_repo: Option<String>,
     pub avatar: Option<String>,
+    pub tech_breakdown: Option<serde_json::Value>,
     pub last_opened_at: Option<String>,
     pub deleted_at: Option<String>,
     pub created_at: String,
@@ -35,6 +36,7 @@ pub struct WorkspaceSync {
     pub name: String,
     pub color: Option<String>,
     pub icon: Option<String>,
+    pub avatar: Option<String>,
     pub sort_order: i32,
     pub created_at: String,
 }
@@ -206,6 +208,52 @@ impl SupabaseClient {
             let status = resp.status();
             let text = resp.text().await.unwrap_or_default();
             Err(format!("fetch_changes {table} failed [{status}]: {text}"))
+        }
+    }
+
+    /// Upload a file to Supabase Storage. Returns the public URL.
+    /// Path format: {bucket}/{user_id}/{filename}
+    pub async fn upload_avatar_file(
+        &self,
+        user_id: &str,
+        filename: &str,
+        data: Vec<u8>,
+    ) -> Result<String, String> {
+        let content_type = match filename.rsplit('.').next().unwrap_or("") {
+            "png" => "image/png",
+            "jpg" | "jpeg" => "image/jpeg",
+            "webp" => "image/webp",
+            "gif" => "image/gif",
+            _ => "application/octet-stream",
+        };
+        let storage_path = format!("{}/{}", user_id, filename);
+        let url = format!(
+            "{}/storage/v1/object/avatars/{}",
+            self.base_url, storage_path
+        );
+        let token = self.access_token.read().await.clone();
+
+        let resp = self
+            .http
+            .post(&url)
+            .header("apikey", &self.api_key)
+            .header("Authorization", format!("Bearer {}", token))
+            .header("Content-Type", content_type)
+            .header("x-upsert", "true")
+            .body(data)
+            .send()
+            .await
+            .map_err(|e| format!("Storage upload error: {e}"))?;
+
+        if resp.status().is_success() {
+            Ok(format!(
+                "{}/storage/v1/object/public/avatars/{}",
+                self.base_url, storage_path
+            ))
+        } else {
+            let status = resp.status();
+            let text = resp.text().await.unwrap_or_default();
+            Err(format!("Storage upload failed [{status}]: {text}"))
         }
     }
 
