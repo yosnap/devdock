@@ -33,7 +33,7 @@
 - ✅ `HttpApiClient implements IApiClient` (Supabase JS)
   - Soft deletes, tag re-fetch strategy, health score filter
 
-## Phase 3 — Desktop Sync Layer ⏳
+## Phase 3 — Desktop Sync Layer ✅
 **Version:** 0.3.0 | **Branch:** `feat/p3-desktop-sync`
 
 - ⏳ Rust sync service (push `sync_queue` entries to Supabase)
@@ -42,7 +42,7 @@
 - ⏳ Tauri auth commands (login/logout via Supabase)
 - ⏳ Sync status indicators in UI
 
-## Phase 4 — Web App ⏳
+## Phase 4 — Web App ✅
 **Version:** 0.3.0 | **Branch:** `feat/p4-web-app`
 
 - ⏳ Next.js app scaffold in `apps/web/`
