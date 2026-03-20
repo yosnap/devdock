@@ -1,0 +1,19 @@
+{
+  "name": "@devdock/hooks",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "types": "./src/index.ts",
+  "dependencies": {
+    "@devdock/types": "workspace:*",
+    "@devdock/api-client": "workspace:*",
+    "@tanstack/react-query": "^5.91.0",
+    "react": "^19.1.0"
+  },
+  "peerDependencies": {
+    "react": "^19.1.0"
+  }
+}

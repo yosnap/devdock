@@ -1,0 +1,14 @@
+{
+  "name": "@devdock/api-client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "types": "./src/index.ts",
+  "dependencies": {
+    "@devdock/types": "workspace:*",
+    "@supabase/supabase-js": "^2.50.5"
+  }
+}

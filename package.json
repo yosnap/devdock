@@ -1,0 +1,23 @@
+{
+  "name": "devdock-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev:desktop": "turbo dev --filter=@devdock/desktop",
+    "build:desktop": "turbo build --filter=@devdock/desktop",
+    "dev:web": "turbo dev --filter=@devdock/web",
+    "build:web": "turbo build --filter=@devdock/web",
+    "build": "turbo build",
+    "test": "turbo test",
+    "lint": "turbo lint",
+    "gen:types": "supabase gen types typescript --project-id $SUPABASE_PROJECT_ID > packages/types/src/supabase-types.ts"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.4",
+    "typescript": "~5.8.3"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=20"
+  }
+}
