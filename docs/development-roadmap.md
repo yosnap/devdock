@@ -52,7 +52,7 @@
 - ⏳ Note items + links pages
 - ⏳ Responsive layout
 
-## Phase 5 — Mobile App ⏳
+## Phase 5 — Mobile App ✅
 **Version:** 0.4.0 | **Branch:** `feat/p5-mobile-app`
 
 - ⏳ Expo app scaffold in `apps/mobile/`
@@ -61,7 +61,7 @@
 - ⏳ Projects list + detail screens
 - ⏳ Offline support (Expo SQLite or MMKV cache)
 
-## Phase 6 — Cross-Platform Polish + Release ⏳
+## Phase 6 — Cross-Platform Polish + Release 🔄
 **Version:** 0.5.0 | **Branch:** `feat/p6-release`
 
 - ⏳ Real-time subscriptions (Supabase Realtime)
