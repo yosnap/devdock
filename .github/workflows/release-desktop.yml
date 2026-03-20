@@ -42,17 +42,13 @@ jobs:
         with:
           targets: ${{ matrix.rust_target }}
 
-      - name: Install dependencies (macOS)
-        if: matrix.platform == 'macos-latest'
-        run: |
-          pnpm install
-          cd apps/desktop && pnpm install
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri
 
-      - name: Install dependencies (Windows)
-        if: matrix.platform == 'windows-latest'
-        run: |
-          pnpm install
-          cd apps/desktop && pnpm install
+      - name: Install dependencies
+        run: pnpm install
 
       - name: Build desktop app
         uses: tauri-apps/tauri-action@v0
