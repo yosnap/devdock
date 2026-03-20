@@ -2,15 +2,15 @@
 
 A multiplatform developer project launcher — organize, open, and manage your local projects from desktop, web, and mobile.
 
-![Version](https://img.shields.io/badge/version-0.2.0-blue) ![License](https://img.shields.io/badge/license-MIT-green) ![Platform](https://img.shields.io/badge/platform-Desktop%20%7C%20Web%20%7C%20Mobile-lightgrey)
+![Version](https://img.shields.io/badge/version-0.3.0-blue) ![License](https://img.shields.io/badge/license-MIT-green) ![Platform](https://img.shields.io/badge/platform-Desktop%20%7C%20Web%20%7C%20Mobile-lightgrey)
 
 ## Platforms
 
 | Platform | Stack | Status |
 |----------|-------|--------|
 | Desktop | Tauri v2 (Rust) + React | ✅ Stable |
-| Web | Next.js + Supabase | 🔄 Phase 4 |
-| Mobile | Expo (React Native) | ⏳ Phase 5 |
+| Web | Vite + React + Supabase | ✅ Stable |
+| Mobile | Expo SDK 55 (React Native) | 🔄 In Progress |
 
 ## Features
 
@@ -19,10 +19,11 @@ A multiplatform developer project launcher — organize, open, and manage your l
 - **IDE Integration** — Launch projects in VS Code, Cursor, WebStorm, etc. (desktop)
 - **Structured Notes** — Rich note editor, GitHub issues integration
 - **GitHub Integration** — Link repos, view commits, push/pull
-- **Health Score** — At-a-glance project health
+- **Health Score** — Auto-calculated, synced across platforms
+- **Tech Stack Detection** — Devicon logos + dependency versions on cards
 - **Search** — Fuzzy search across all projects
 - **Dark / Light / Auto theme**
-- **Cloud Sync** — Desktop ↔ Web ↔ Mobile via Supabase (in progress)
+- **Cloud Sync** — Desktop ↔ Web via Supabase (avatars, health, tech breakdown)
 
 ## Monorepo Structure
 
@@ -30,7 +31,7 @@ A multiplatform developer project launcher — organize, open, and manage your l
 devdock/
 ├── apps/
 │   ├── desktop/          # Tauri v2 desktop app (offline-first, SQLite)
-│   ├── web/              # Next.js web app
+│   ├── web/              # Vite + React web app
 │   └── mobile/           # Expo mobile app
 ├── packages/
 │   ├── types/            # @devdock/types   — shared domain models
