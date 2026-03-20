@@ -1,3 +1,4 @@
+mod auth;
 mod commands;
 mod models;
 mod services;
@@ -150,6 +151,10 @@ pub fn run() {
             get_sync_status,
             force_sync,
             clear_sync_queue,
+            // Auth commands
+            auth::auth_commands::sign_in_with_email,
+            auth::auth_commands::sign_out,
+            auth::auth_commands::get_current_user,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

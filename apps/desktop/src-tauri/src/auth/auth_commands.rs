@@ -80,7 +80,9 @@ pub async fn sign_in_with_email(
     };
 
     // Persist tokens to OS keychain
-    keychain_service::store_supabase_token(&data.access_token, &data.refresh_token)
+    keychain_service::store_supabase_token(&data.access_token)
+        .map_err(|e| format!("Keychain store error: {e}"))?;
+    keychain_service::store_supabase_refresh_token(&data.refresh_token)
         .map_err(|e| format!("Keychain store error: {e}"))?;
 
     // Notify frontend

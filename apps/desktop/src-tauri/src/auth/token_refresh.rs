@@ -44,7 +44,9 @@ pub async fn refresh_token(
         .map_err(|e| format!("Token refresh JSON parse error: {e}"))?;
 
     // Persist new tokens to keychain so they survive restarts
-    keychain_service::store_supabase_token(&data.access_token, &data.refresh_token)
+    keychain_service::store_supabase_token(&data.access_token)
+        .map_err(|e| format!("Keychain store error after refresh: {e}"))?;
+    keychain_service::store_supabase_refresh_token(&data.refresh_token)
         .map_err(|e| format!("Keychain store error after refresh: {e}"))?;
 
     Ok((data.access_token, data.refresh_token))
