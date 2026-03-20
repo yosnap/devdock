@@ -133,7 +133,7 @@ export function AddProjectModal({ open, project, onClose }: AddProjectModalProps
       okText={isEditing ? 'Save' : 'Add Project'}
       confirmLoading={isPending}
       width={520}
-      destroyOnClose
+      destroyOnHidden
     >
       <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
         {/* Folder picker */}

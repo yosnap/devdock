@@ -159,7 +159,7 @@ export function WorkspacesPage() {
         onOk={handleSubmit}
         confirmLoading={isPending}
         width={420}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
           <Form.Item name="name" label="Name" rules={[{ required: true, message: 'Name is required' }]}>

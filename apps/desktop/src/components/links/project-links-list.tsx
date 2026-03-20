@@ -123,7 +123,7 @@ export function ProjectLinksList({ projectId }: ProjectLinksListProps) {
         onCancel={() => setModalOpen(false)}
         onOk={handleSubmit}
         confirmLoading={upsertLink.isPending}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
           <Form.Item label="Title" name="title" rules={[{ required: true }]}>

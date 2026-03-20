@@ -209,16 +209,22 @@ impl SupabaseClient {
         }
     }
 
-    /// HEAD request to check connectivity
+    /// Check connectivity: requires a non-empty token AND reachable Supabase host.
     pub async fn check_connectivity(&self) -> bool {
-        let url = format!("{}/rest/v1/", self.base_url);
-        let headers = self.auth_headers().await;
-
-        let mut req = self.http.head(&url);
-        for (k, v) in &headers {
-            req = req.header(*k, v);
+        let token = self.access_token.read().await.clone();
+        if token.is_empty() {
+            return false;
         }
 
-        req.send().await.map(|r| r.status().as_u16() < 500).unwrap_or(false)
+        let url = format!("{}/rest/v1/", self.base_url);
+        self.http
+            .get(&url)
+            .header("apikey", &self.api_key)
+            .header("Authorization", format!("Bearer {}", token))
+            .timeout(std::time::Duration::from_secs(5))
+            .send()
+            .await
+            .map(|r| r.status().as_u16() < 500)
+            .unwrap_or(false)
     }
 }

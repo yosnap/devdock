@@ -39,11 +39,12 @@ pub async fn enqueue(
 
 /// Fetch oldest N pending items (retry_count < 5).
 pub async fn dequeue_batch(pool: &SqlitePool, limit: i64) -> Result<Vec<SyncQueueItem>, String> {
+    // Order: workspaces before projects (FK dependency), then by created_at
     let rows = sqlx::query(
         "SELECT id, table_name, record_id, operation, payload, retry_count \
          FROM sync_queue \
          WHERE retry_count < 5 \
-         ORDER BY created_at ASC \
+         ORDER BY CASE table_name WHEN 'workspaces' THEN 0 ELSE 1 END ASC, created_at ASC \
          LIMIT ?",
     )
     .bind(limit)

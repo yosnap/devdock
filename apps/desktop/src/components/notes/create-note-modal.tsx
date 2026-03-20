@@ -64,7 +64,7 @@ export function CreateNoteModal({ open, editingNote, onSubmit, onCancel }: Creat
       okText={editingNote ? 'Guardar' : 'Crear'}
       cancelText="Cancelar"
       width={580}
-      destroyOnClose
+      destroyOnHidden
     >
       <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
         <Form.Item name="note_type" label="Tipo" rules={[{ required: true }]}>

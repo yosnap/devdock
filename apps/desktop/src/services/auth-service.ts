@@ -7,6 +7,10 @@ export async function signInWithEmail(email: string, password: string): Promise<
   return invoke<AuthUser>('sign_in_with_email', { email, password });
 }
 
+export async function signInWithGithub(): Promise<void> {
+  return invoke<void>('sign_in_with_github');
+}
+
 export async function signOut(): Promise<void> {
   return invoke<void>('sign_out');
 }

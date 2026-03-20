@@ -49,7 +49,7 @@ export function LinkFormModal({ open, editingLink, loading, onSubmit, onCancel }
       okText={editingLink ? 'Save' : 'Add'}
       confirmLoading={loading}
       width={480}
-      destroyOnClose
+      destroyOnHidden
     >
       <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
         <Form.Item name="title" label="Title" rules={[{ required: true, message: 'Title is required' }]}>

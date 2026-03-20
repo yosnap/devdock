@@ -57,7 +57,7 @@ export function CreateIssueModal({ open, owner, repo, loading, initialTitle, ini
       onCancel={handleCancel}
       okText="Create Issue"
       confirmLoading={loading}
-      destroyOnClose
+      destroyOnHidden
       width={640}
     >
       <Form form={form} layout="vertical" style={{ marginTop: 16 }}>

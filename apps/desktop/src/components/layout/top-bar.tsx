@@ -9,19 +9,21 @@ import {
 } from '@ant-design/icons';
 import { Button, Input, Segmented, Tooltip } from 'antd';
 import { AdvancedFilters } from '../filters/advanced-filters';
+import { SyncStatusIndicator } from '../auth/sync-status-indicator';
 import { useTheme } from '../../hooks/use-theme';
 import { useAppStore } from '../../stores/app-store';
 import type { AppTheme, ViewMode } from '@devdock/types';
 
 interface TopBarProps {
   onAddProject: () => void;
+  onSignInClick: () => void;
 }
 
 const THEME_CYCLE: AppTheme[] = ['light', 'dark', 'auto'];
 const THEME_ICON = { light: <SunOutlined />, dark: <MoonOutlined />, auto: <DesktopOutlined /> };
 const THEME_LABEL = { light: 'Tema claro', dark: 'Tema oscuro', auto: 'Tema automático (sistema)' };
 
-export function TopBar({ onAddProject }: TopBarProps) {
+export function TopBar({ onAddProject, onSignInClick }: TopBarProps) {
   const { viewMode, setViewMode, filters, setFilters } = useAppStore();
   const { theme, applyTheme } = useTheme();
 
@@ -75,6 +77,9 @@ export function TopBar({ onAddProject }: TopBarProps) {
         value={viewMode}
         onChange={setViewMode}
       />
+
+      {/* Sync status / Sign in */}
+      <SyncStatusIndicator onSignInClick={onSignInClick} />
 
       {/* Add project */}
       <Button type="primary" icon={<PlusOutlined />} onClick={onAddProject}>

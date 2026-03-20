@@ -10,6 +10,7 @@ import { ProjectDetailDrawer } from '../projects/project-detail-drawer';
 import { ProjectGrid } from '../projects/project-grid';
 import { QuickLaunchOverlay } from '../quick-launch/quick-launch-overlay';
 import { SettingsLayout } from '../settings/settings-layout';
+import { DesktopLoginModal } from '../auth/desktop-login-modal';
 import { Sidebar } from './sidebar';
 import { TopBar } from './top-bar';
 import { QuickCreateWorkspaceModal } from '../workspaces/quick-create-workspace-modal';
@@ -27,6 +28,7 @@ export function AppLayout() {
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [detailProject, setDetailProject] = useState<Project | null>(null);
   const [quickLaunchOpen, setQuickLaunchOpen] = useState(false);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
 
   // Global keyboard shortcut: Cmd/Ctrl+K → Quick Launch
   useEffect(() => {
@@ -78,7 +80,7 @@ export function AppLayout() {
         {/* Top bar — only on dashboard */}
         {activeView === 'dashboard' && (
           <Header style={{ padding: 0, height: 'auto', lineHeight: 'normal', background: 'transparent' }}>
-            <TopBar onAddProject={() => setAddModalOpen(true)} />
+            <TopBar onAddProject={() => setAddModalOpen(true)} onSignInClick={() => setLoginModalOpen(true)} />
           </Header>
         )}
 
@@ -121,6 +123,9 @@ export function AppLayout() {
 
       {/* Quick create workspace (triggered from sidebar) */}
       <QuickCreateWorkspaceModal />
+
+      {/* Supabase login modal */}
+      <DesktopLoginModal open={loginModalOpen} onClose={() => setLoginModalOpen(false)} />
     </Layout>
   );
 }

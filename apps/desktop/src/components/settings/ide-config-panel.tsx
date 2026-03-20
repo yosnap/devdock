@@ -158,7 +158,7 @@ export function IdeConfigPanel() {
         onCancel={() => setModalOpen(false)}
         onOk={handleSubmit}
         confirmLoading={isPending}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
           <Form.Item label="Name" name="name" rules={[{ required: true }]}>

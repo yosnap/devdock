@@ -1,9 +1,12 @@
-/// Tauri commands for Supabase email/password authentication.
+/// Tauri commands for Supabase authentication (email/password + GitHub OAuth).
 /// The desktop app remains fully functional offline — auth only enables sync.
 use crate::services::keychain_service;
+use crate::services::db_service::DbState;
 use crate::auth::token_refresh;
+use crate::sync::sync_commands::SupabaseState;
 use serde::{Deserialize, Serialize};
-use tauri::Emitter;
+use tauri::{Emitter, Manager};
+use tauri_plugin_opener::OpenerExt;
 
 // Supabase credentials — baked in at compile time for desktop (no backend secret required)
 const SUPABASE_URL: &str = "https://wrlwhuxmtnmocfootpxh.supabase.co";
@@ -85,6 +88,23 @@ pub async fn sign_in_with_email(
     keychain_service::store_supabase_refresh_token(&data.refresh_token)
         .map_err(|e| format!("Keychain store error: {e}"))?;
 
+    // Update running sync worker with new token
+    if let Some(supabase) = app.try_state::<SupabaseState>() {
+        supabase.0.set_access_token(user.access_token.clone()).await;
+    }
+
+    // Backfill user_id into pending sync_queue items (created before login)
+    if let Ok(db) = app.try_state::<DbState>().ok_or(()) {
+        let uid = user.id.clone();
+        let _ = sqlx::query(
+            "UPDATE sync_queue SET payload = json_set(payload, '$.user_id', ?)
+             WHERE operation IN ('INSERT','UPDATE') AND json_extract(payload, '$.user_id') IS NULL"
+        )
+        .bind(&uid)
+        .execute(&db.0)
+        .await;
+    }
+
     // Notify frontend
     app.emit("auth:signed-in", &user)
         .map_err(|e| format!("Event emit error: {e}"))?;
@@ -112,6 +132,224 @@ pub async fn sign_out(app: tauri::AppHandle) -> Result<(), String> {
         .map_err(|e| format!("Keychain delete error: {e}"))?;
 
     app.emit("auth:signed-out", ())
+        .map_err(|e| format!("Event emit error: {e}"))?;
+
+    Ok(())
+}
+
+/// OAuth callback port — a temporary HTTP server listens here to capture tokens.
+/// Must be added to Supabase Redirect URLs: http://localhost:17365/auth/callback
+const OAUTH_CALLBACK_PORT: u16 = 17365;
+
+/// Open browser for GitHub OAuth via Supabase.
+/// Spawns a one-shot HTTP server to capture the callback token,
+/// then stores it in keychain and emits auth:signed-in.
+#[tauri::command]
+pub async fn sign_in_with_github(app: tauri::AppHandle) -> Result<(), String> {
+    #[cfg(debug_assertions)]
+    let redirect = format!("http://localhost:{}/auth/callback", OAUTH_CALLBACK_PORT);
+    #[cfg(not(debug_assertions))]
+    let redirect = "devdock://auth/callback".to_string();
+
+    let encoded_redirect = redirect.replace(':', "%3A").replace('/', "%2F");
+    let oauth_url = format!(
+        "{}/auth/v1/authorize?provider=github&redirect_to={}",
+        SUPABASE_URL, encoded_redirect
+    );
+
+    // Spawn the one-shot callback server before opening the browser
+    let app_clone = app.clone();
+    tokio::spawn(async move {
+        if let Err(e) = wait_for_oauth_callback(&app_clone).await {
+            eprintln!("[oauth] Callback server error: {e}");
+        }
+    });
+
+    app.opener()
+        .open_url(&oauth_url, None::<&str>)
+        .map_err(|e| format!("Failed to open browser: {e}"))?;
+    Ok(())
+}
+
+/// Listens on localhost:OAUTH_CALLBACK_PORT for the OAuth redirect.
+/// Strategy: first request gets an HTML page that reads the URL fragment with JS
+/// and makes a second GET request with tokens as query params (fragments never reach server).
+async fn wait_for_oauth_callback(app: &tauri::AppHandle) -> Result<(), String> {
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    use tokio::net::TcpListener;
+
+    let addr = format!("127.0.0.1:{}", OAUTH_CALLBACK_PORT);
+    let listener = TcpListener::bind(&addr)
+        .await
+        .map_err(|e| format!("Cannot bind callback server: {e}"))?;
+
+    // First connection: Supabase redirects here with fragment — serve JS to re-send tokens
+    {
+        let (mut stream, _) = listener.accept().await
+            .map_err(|e| format!("Accept error: {e}"))?;
+        let mut buf = vec![0u8; 4096];
+        let _ = stream.read(&mut buf).await;
+
+        // JS reads fragment and redirects to /token?access_token=...
+        let html = r#"<!DOCTYPE html><html><head><title>DevDock</title></head><body>
+<p>Completing sign in...</p>
+<script>
+  const params = new URLSearchParams(window.location.hash.slice(1));
+  const at = params.get('access_token') || '';
+  const rt = params.get('refresh_token') || '';
+  window.location.href = '/token?access_token=' + encodeURIComponent(at) + '&refresh_token=' + encodeURIComponent(rt);
+</script></body></html>"#;
+        let response = format!(
+            "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+            html.len(), html
+        );
+        let _ = stream.write_all(response.as_bytes()).await;
+    }
+
+    // Second connection: JS sends GET /token?access_token=X&refresh_token=Y
+    let (mut stream, _) = listener.accept().await
+        .map_err(|e| format!("Accept error: {e}"))?;
+    let mut buf = vec![0u8; 8192];
+    let n = stream.read(&mut buf).await.map_err(|e| format!("Read error: {e}"))?;
+    let request = String::from_utf8_lossy(&buf[..n]);
+
+    let path = request.lines().next()
+        .and_then(|l| l.split_whitespace().nth(1))
+        .unwrap_or("");
+    let query = path.split('?').nth(1).unwrap_or("");
+
+    let mut access_token = String::new();
+    let mut refresh_token = String::new();
+    for pair in query.split('&') {
+        let mut parts = pair.splitn(2, '=');
+        match (parts.next(), parts.next()) {
+            (Some("access_token"), Some(v)) => access_token = urldecode(v),
+            (Some("refresh_token"), Some(v)) => refresh_token = urldecode(v),
+            _ => {}
+        }
+    }
+
+    let success = !access_token.is_empty();
+    let html = if success {
+        "<!DOCTYPE html><html><body><h2>Signed in to DevDock!</h2><p>You can close this tab.</p><script>setTimeout(()=>window.close(),1000)</script></body></html>"
+    } else {
+        "<!DOCTYPE html><html><body><h2>Sign in failed</h2><p>No token received.</p></body></html>"
+    };
+    let response = format!(
+        "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+        html.len(), html
+    );
+    let _ = stream.write_all(response.as_bytes()).await;
+    drop(stream);
+
+    if !success {
+        return Err("No access_token in OAuth callback".to_string());
+    }
+
+    handle_oauth_callback(app, &format!(
+        "devdock://auth/callback#access_token={}&refresh_token={}",
+        access_token, refresh_token
+    )).await
+}
+
+fn urldecode(s: &str) -> String {
+    let mut result = String::with_capacity(s.len());
+    let bytes = s.as_bytes();
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i] == b'%' && i + 2 < bytes.len() {
+            if let Ok(hex) = std::str::from_utf8(&bytes[i+1..i+3]) {
+                if let Ok(byte) = u8::from_str_radix(hex, 16) {
+                    result.push(byte as char);
+                    i += 3;
+                    continue;
+                }
+            }
+        } else if bytes[i] == b'+' {
+            result.push(' ');
+            i += 1;
+            continue;
+        }
+        result.push(bytes[i] as char);
+        i += 1;
+    }
+    result
+}
+
+/// Complete OAuth flow after deep-link callback.
+/// Called from lib.rs deep-link handler with the full callback URL.
+/// Exchanges the URL fragment tokens and stores them in keychain.
+pub async fn handle_oauth_callback(app: &tauri::AppHandle, url: &str) -> Result<(), String> {
+    // Parse fragment: devdock://auth/callback#access_token=X&refresh_token=Y&...
+    let fragment = url.split('#').nth(1).unwrap_or("");
+    let mut access_token = String::new();
+    let mut refresh_token = String::new();
+
+    for pair in fragment.split('&') {
+        let mut parts = pair.splitn(2, '=');
+        match (parts.next(), parts.next()) {
+            (Some("access_token"), Some(v)) => access_token = v.to_string(),
+            (Some("refresh_token"), Some(v)) => refresh_token = v.to_string(),
+            _ => {}
+        }
+    }
+
+    if access_token.is_empty() {
+        return Err("OAuth callback missing access_token".to_string());
+    }
+
+    // Persist tokens
+    keychain_service::store_supabase_token(&access_token)
+        .map_err(|e| format!("Keychain store error: {e}"))?;
+    if !refresh_token.is_empty() {
+        keychain_service::store_supabase_refresh_token(&refresh_token)
+            .map_err(|e| format!("Keychain store error: {e}"))?;
+    }
+
+    // Fetch user info to emit auth:signed-in
+    let client = reqwest::Client::new();
+    let user_url = format!("{}/auth/v1/user", SUPABASE_URL);
+    let resp = client
+        .get(&user_url)
+        .header("apikey", SUPABASE_ANON_KEY)
+        .header("Authorization", format!("Bearer {}", access_token))
+        .send()
+        .await
+        .map_err(|e| format!("User fetch error: {e}"))?;
+
+    #[derive(Deserialize)]
+    struct OAuthUser { id: String, email: Option<String> }
+
+    let user_data: OAuthUser = resp
+        .json()
+        .await
+        .map_err(|e| format!("User JSON parse error: {e}"))?;
+
+    let auth_user = AuthUser {
+        id: user_data.id,
+        email: user_data.email.unwrap_or_default(),
+        access_token,
+        refresh_token,
+    };
+
+    // Update running sync worker with new token so sync starts immediately
+    if let Some(supabase) = app.try_state::<SupabaseState>() {
+        supabase.0.set_access_token(auth_user.access_token.clone()).await;
+    }
+
+    // Backfill user_id into pending sync_queue items (created before login)
+    if let Ok(db) = app.try_state::<DbState>().ok_or(()) {
+        let uid = auth_user.id.clone();
+        let _ = sqlx::query(
+            "UPDATE sync_queue SET payload = json_set(payload, '$.user_id', ?)
+             WHERE operation IN ('INSERT','UPDATE') AND json_extract(payload, '$.user_id') IS NULL"
+        )
+        .bind(&uid)
+        .execute(&db.0)
+        .await;
+    }
+
+    app.emit("auth:signed-in", &auth_user)
         .map_err(|e| format!("Event emit error: {e}"))?;
 
     Ok(())

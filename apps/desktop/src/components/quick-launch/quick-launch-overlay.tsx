@@ -108,7 +108,7 @@ export function QuickLaunchOverlay({ open, onClose }: QuickLaunchOverlayProps) {
       width={560}
       style={{ top: 120 }}
       styles={{ body: { padding: 0 } }}
-      destroyOnClose
+      destroyOnHidden
     >
       <div onKeyDown={handleKeyDown}>
         <Input

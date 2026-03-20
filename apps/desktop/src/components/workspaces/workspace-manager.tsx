@@ -166,7 +166,7 @@ export function WorkspaceManager() {
         onCancel={() => setModalOpen(false)}
         onOk={handleSubmit}
         confirmLoading={isPending}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
           <Form.Item label="Nombre" name="name" rules={[{ required: true, message: 'El nombre es obligatorio' }]}>

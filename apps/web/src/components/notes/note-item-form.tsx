@@ -59,7 +59,7 @@ export function NoteItemForm({ open, editingNote, loading, onSubmit, onCancel }:
       okText={editingNote ? 'Save' : 'Create'}
       confirmLoading={loading}
       width={540}
-      destroyOnClose
+      destroyOnHidden
     >
       <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
         <Form.Item name="note_type" label="Type" rules={[{ required: true }]}>

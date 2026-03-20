@@ -161,8 +161,8 @@ fn parse_project_sync(v: &serde_json::Value) -> Result<ProjectSync, String> {
         avatar: get_opt_str(v, "avatar"),
         last_opened_at: get_opt_str(v, "last_opened_at"),
         deleted_at: get_opt_str(v, "deleted_at"),
-        created_at: get_str(v, "created_at")?,
-        updated_at: get_str(v, "updated_at")?,
+        created_at: get_str(v, "created_at").unwrap_or_else(|_| chrono::Utc::now().to_rfc3339()),
+        updated_at: get_str(v, "updated_at").unwrap_or_else(|_| chrono::Utc::now().to_rfc3339()),
     })
 }
 
@@ -174,7 +174,7 @@ fn parse_workspace_sync(v: &serde_json::Value) -> Result<WorkspaceSync, String> 
         color: get_opt_str(v, "color"),
         icon: get_opt_str(v, "icon"),
         sort_order: v["sort_order"].as_i64().unwrap_or(0) as i32,
-        created_at: get_str(v, "created_at")?,
+        created_at: get_str(v, "created_at").unwrap_or_else(|_| chrono::Utc::now().to_rfc3339()),
     })
 }
 

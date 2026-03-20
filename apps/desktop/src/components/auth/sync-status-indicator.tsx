@@ -55,7 +55,11 @@ function formatLastSync(ts: string | null): string {
   }
 }
 
-export function SyncStatusIndicator() {
+interface SyncStatusIndicatorProps {
+  onSignInClick?: () => void;
+}
+
+export function SyncStatusIndicator({ onSignInClick }: SyncStatusIndicatorProps = {}) {
   const { user, signOut } = useDesktopAuth();
   const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null);
   const [forceSyncing, setForceSyncing] = useState(false);
@@ -92,7 +96,13 @@ export function SyncStatusIndicator() {
     }
   }
 
-  if (!user) return null;
+  if (!user) {
+    return (
+      <Button size="small" icon={<CloudOutlined />} onClick={onSignInClick}>
+        Sign in to sync
+      </Button>
+    );
+  }
 
   const syncState = deriveSyncState(syncStatus);
 

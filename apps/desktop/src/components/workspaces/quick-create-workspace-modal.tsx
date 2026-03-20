@@ -43,7 +43,7 @@ export function QuickCreateWorkspaceModal() {
       okText="Crear"
       cancelText="Cancelar"
       confirmLoading={createWs.isPending}
-      destroyOnClose
+      destroyOnHidden
     >
       <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
         <Form.Item name="name" label="Nombre" rules={[{ required: true, message: 'El nombre es obligatorio' }]}>

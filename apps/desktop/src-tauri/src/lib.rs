@@ -20,10 +20,13 @@ use sync::{
 };
 use std::sync::Arc;
 use tauri::Manager;
+use tauri_plugin_deep_link::DeepLinkExt;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_deep_link::init())
+        .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -35,11 +38,11 @@ pub fn run() {
                 // Start background worker for git + deps scanning
                 let _worker = start_background_worker(pool.clone());
 
-                // Build Supabase client — credentials come from keychain / env at runtime
+                // Build Supabase client — baked in at compile time (same as auth_commands)
                 let supabase_url = std::env::var("SUPABASE_URL")
-                    .unwrap_or_else(|_| "https://placeholder.supabase.co".to_string());
+                    .unwrap_or_else(|_| "https://wrlwhuxmtnmocfootpxh.supabase.co".to_string());
                 let supabase_anon_key = std::env::var("SUPABASE_ANON_KEY")
-                    .unwrap_or_else(|_| String::new());
+                    .unwrap_or_else(|_| "sb_publishable_Yaw1VVE2hLvm4rJVsWV8ig_GBInoQ-9".to_string());
 
                 // Load saved access token from keychain (empty string if not yet authed)
                 let access_token = keychain_service::get_supabase_token()
@@ -79,6 +82,23 @@ pub fn run() {
                 handle.manage(DbState(pool));
                 handle.manage(SupabaseState(supabase));
             });
+
+            // Handle OAuth deep-link callbacks: devdock://auth/callback#access_token=...
+            let handle_dl = app.handle().clone();
+            app.deep_link().on_open_url(move |event| {
+                for url in event.urls() {
+                    let url_str = url.to_string();
+                    if url_str.starts_with("devdock://auth/callback") {
+                        let app_clone = handle_dl.clone();
+                        tauri::async_runtime::spawn(async move {
+                            if let Err(e) = auth::auth_commands::handle_oauth_callback(&app_clone, &url_str).await {
+                                eprintln!("[deep-link] OAuth callback error: {e}");
+                            }
+                        });
+                    }
+                }
+            });
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -155,6 +175,7 @@ pub fn run() {
             clear_sync_queue,
             // Auth commands
             auth::auth_commands::sign_in_with_email,
+            auth::auth_commands::sign_in_with_github,
             auth::auth_commands::sign_out,
             auth::auth_commands::get_current_user,
         ])
