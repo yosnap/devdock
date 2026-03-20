@@ -1,0 +1,62 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT weight_deps_outdated, weight_vulnerability, weight_ci_failing,\n                weight_stale_30d, weight_stale_90d, weight_uncommitted,\n                weight_no_remote, attention_threshold\n         FROM health_config WHERE id = 'default' LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "name": "weight_deps_outdated",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "weight_vulnerability",
+        "ordinal": 1,
+        "type_info": "Integer"
+      },
+      {
+        "name": "weight_ci_failing",
+        "ordinal": 2,
+        "type_info": "Integer"
+      },
+      {
+        "name": "weight_stale_30d",
+        "ordinal": 3,
+        "type_info": "Integer"
+      },
+      {
+        "name": "weight_stale_90d",
+        "ordinal": 4,
+        "type_info": "Integer"
+      },
+      {
+        "name": "weight_uncommitted",
+        "ordinal": 5,
+        "type_info": "Integer"
+      },
+      {
+        "name": "weight_no_remote",
+        "ordinal": 6,
+        "type_info": "Integer"
+      },
+      {
+        "name": "attention_threshold",
+        "ordinal": 7,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "9c8e158c2632bb4cdc541e59e1f46ad23eb70b115d2b65991c241220430fb0bf"
+}

@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE projects SET github_owner = ?, github_repo = ? WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "8c502bb7a42b727c5f62198fc520157a468f96a08c69e1c2ade5a80618227bd6"
+}

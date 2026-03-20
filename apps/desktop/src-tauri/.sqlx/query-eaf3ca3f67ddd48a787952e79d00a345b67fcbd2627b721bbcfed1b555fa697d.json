@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO workspaces (id, name, color, icon, sort_order)\n             VALUES (?, ?, ?, ?, ?)\n             ON CONFLICT(id) DO UPDATE SET name = excluded.name, color = excluded.color,\n               icon = excluded.icon, sort_order = excluded.sort_order",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": []
+  },
+  "hash": "eaf3ca3f67ddd48a787952e79d00a345b67fcbd2627b721bbcfed1b555fa697d"
+}

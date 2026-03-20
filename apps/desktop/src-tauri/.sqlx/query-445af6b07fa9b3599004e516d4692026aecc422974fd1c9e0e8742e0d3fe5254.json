@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO github_cache (project_id, cache_key, data, cached_at)\n         VALUES (?, ?, ?, datetime('now'))\n         ON CONFLICT(project_id, cache_key) DO UPDATE SET data = excluded.data, cached_at = excluded.cached_at",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "445af6b07fa9b3599004e516d4692026aecc422974fd1c9e0e8742e0d3fe5254"
+}
