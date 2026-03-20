@@ -7,7 +7,7 @@ DevDock is a **pnpm + Turborepo monorepo** targeting three platforms from a sing
 | Platform | App | Runtime |
 |----------|-----|---------|
 | Desktop  | `apps/desktop` | Tauri v2 (Rust + React) |
-| Web      | `apps/web`     | Next.js (Supabase auth) |
+| Web      | `apps/web`     | Vite + React (Supabase auth) |
 | Mobile   | `apps/mobile`  | Expo / React Native     |
 
 ---
@@ -18,7 +18,7 @@ DevDock is a **pnpm + Turborepo monorepo** targeting three platforms from a sing
 devdock/
 ├── apps/
 │   ├── desktop/          # Tauri v2 desktop app (offline-first, SQLite)
-│   ├── web/              # Next.js web app (Supabase real-time)
+│   ├── web/              # Vite + React web app (Supabase)
 │   └── mobile/           # Expo mobile app (Supabase)
 ├── packages/
 │   ├── types/            # @devdock/types  — shared domain models & payloads
@@ -151,4 +151,4 @@ const httpClient = new HttpApiClient(supabaseClient);
 | Cloud DB | Supabase (PostgreSQL + RLS) |
 | Auth | Supabase Auth |
 | Mobile | Expo (React Native) |
-| Web | Next.js |
+| Web | Vite + React |
