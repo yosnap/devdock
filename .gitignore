@@ -84,3 +84,11 @@ external/
 
 # Git worktrees (local development only)
 worktrees/
+
+# Agent artifacts
+.agents/
+skills-lock.json
+
+# Web build artifacts
+apps/web/vite.config.d.ts
+apps/web/vite.config.js
