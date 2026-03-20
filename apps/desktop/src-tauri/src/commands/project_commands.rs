@@ -1,6 +1,7 @@
 use crate::models::{CreateProjectPayload, Project, UpdateProjectPayload};
 use crate::services::{db_service::DbState, ide_launcher, project_scanner, tech_detector};
 use crate::services::tech_detector::TechBreakdown;
+use crate::sync::sync_queue;
 use chrono::Utc;
 use sqlx::Row;
 use tauri::State;
@@ -80,6 +81,24 @@ pub async fn add_project(
     .execute(pool)
     .await
     .map_err(|e| format!("Failed to insert project: {e}"))?;
+
+    // Enqueue for cloud sync (fire-and-forget — does not block command response)
+    {
+        let pool_clone = pool.clone();
+        let id_clone = id.clone();
+        let project_json = serde_json::json!({
+            "id": &id, "name": &payload.name, "description": &payload.description,
+            "stack": &stack, "workspace_id": &payload.workspace_id,
+            "is_favorite": false, "status": "active", "health_score": 0,
+            "created_at": &now, "updated_at": &now,
+        });
+        tokio::spawn(async move {
+            let _ = sync_queue::enqueue(
+                &pool_clone, "projects", &id_clone,
+                "INSERT", Some(project_json.to_string()),
+            ).await;
+        });
+    }
 
     // Insert tags
     if let Some(tags) = &payload.tags {
@@ -165,6 +184,28 @@ pub async fn update_project(
         }
     }
 
+    // Enqueue for cloud sync
+    {
+        let pool_clone = pool.clone();
+        let record_id = payload.id.clone();
+        let update_json = serde_json::json!({
+            "id": &payload.id,
+            "name": &payload.name,
+            "description": &payload.description,
+            "stack": &payload.stack,
+            "workspace_id": &payload.workspace_id,
+            "is_favorite": payload.is_favorite,
+            "status": &payload.status,
+            "updated_at": &now,
+        });
+        tokio::spawn(async move {
+            let _ = sync_queue::enqueue(
+                &pool_clone, "projects", &record_id,
+                "UPDATE", Some(update_json.to_string()),
+            ).await;
+        });
+    }
+
     // Return updated project
     get_project_by_id(pool, &payload.id).await
 }
@@ -177,6 +218,19 @@ pub async fn delete_project(id: String, db: State<'_, DbState>) -> Result<(), St
         .execute(&db.0)
         .await
         .map_err(|e| format!("Failed to delete project: {e}"))?;
+
+    // Enqueue soft-delete for cloud sync (payload = record id)
+    {
+        let pool_clone = db.0.clone();
+        let record_id = id.clone();
+        tokio::spawn(async move {
+            let _ = sync_queue::enqueue(
+                &pool_clone, "projects", &record_id,
+                "DELETE", Some(record_id.clone()),
+            ).await;
+        });
+    }
+
     Ok(())
 }
 

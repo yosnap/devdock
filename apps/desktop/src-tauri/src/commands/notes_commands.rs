@@ -2,6 +2,7 @@ use crate::models::{
     CreateNotePayload, NoteItem, ProjectLink, ProjectNote, UpdateNotePayload, UpsertLinkPayload,
 };
 use crate::services::db_service::DbState;
+use crate::sync::sync_queue;
 use chrono::Utc;
 use sqlx::Row;
 use tauri::State;
@@ -203,6 +204,18 @@ pub async fn delete_link(id: String, db: State<'_, DbState>) -> Result<(), Strin
         .execute(&db.0)
         .await
         .map_err(|e| format!("Failed to delete link: {e}"))?;
+
+    {
+        let pool_clone = db.0.clone();
+        let record_id = id.clone();
+        tokio::spawn(async move {
+            let _ = sync_queue::enqueue(
+                &pool_clone, "project_links", &record_id,
+                "DELETE", Some(record_id.clone()),
+            ).await;
+        });
+    }
+
     Ok(())
 }
 
@@ -281,6 +294,24 @@ pub async fn create_note_item(
     .execute(&db.0)
     .await
     .map_err(|e| format!("Failed to create note item: {e}"))?;
+
+    // Enqueue for cloud sync
+    {
+        let pool_clone = db.0.clone();
+        let id_clone = id.clone();
+        let item_json = serde_json::json!({
+            "id": &id, "project_id": &payload.project_id,
+            "title": &payload.title, "content": &payload.content,
+            "note_type": &payload.note_type, "is_resolved": false,
+            "created_at": &now, "updated_at": &now,
+        });
+        tokio::spawn(async move {
+            let _ = sync_queue::enqueue(
+                &pool_clone, "project_note_items", &id_clone,
+                "INSERT", Some(item_json.to_string()),
+            ).await;
+        });
+    }
 
     Ok(NoteItem {
         id,
@@ -368,6 +399,18 @@ pub async fn delete_note_item(id: String, db: State<'_, DbState>) -> Result<(), 
         .execute(&db.0)
         .await
         .map_err(|e| format!("Failed to delete note item: {e}"))?;
+
+    {
+        let pool_clone = db.0.clone();
+        let record_id = id.clone();
+        tokio::spawn(async move {
+            let _ = sync_queue::enqueue(
+                &pool_clone, "project_note_items", &record_id,
+                "DELETE", Some(record_id.clone()),
+            ).await;
+        });
+    }
+
     Ok(())
 }
 

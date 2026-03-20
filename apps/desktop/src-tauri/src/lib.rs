@@ -1,12 +1,21 @@
 mod commands;
 mod models;
 mod services;
+mod sync;
 
 use commands::*;
 use services::{
     background_worker::start_background_worker,
     db_service::{init_db, DbState},
+    keychain_service,
 };
+use sync::{
+    startup_sync::pull_remote_changes,
+    supabase_client::SupabaseClient,
+    sync_commands::{clear_sync_queue, force_sync, get_sync_status, SupabaseState},
+    sync_worker::start_sync_worker,
+};
+use std::sync::Arc;
 use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -19,9 +28,53 @@ pub fn run() {
             let handle = app.handle().clone();
             tauri::async_runtime::block_on(async move {
                 let pool = init_db(&handle).await.expect("Failed to initialize database");
+
                 // Start background worker for git + deps scanning
                 let _worker = start_background_worker(pool.clone());
+
+                // Build Supabase client — credentials come from keychain / env at runtime
+                let supabase_url = std::env::var("SUPABASE_URL")
+                    .unwrap_or_else(|_| "https://placeholder.supabase.co".to_string());
+                let supabase_anon_key = std::env::var("SUPABASE_ANON_KEY")
+                    .unwrap_or_else(|_| String::new());
+
+                // Load saved access token from keychain (empty string if not yet authed)
+                let access_token = keychain_service::get_supabase_token()
+                    .unwrap_or_default()
+                    .unwrap_or_default();
+
+                let supabase = Arc::new(SupabaseClient::new(
+                    supabase_url,
+                    supabase_anon_key,
+                    access_token.clone(),
+                ));
+
+                // Start outbound sync worker
+                start_sync_worker(pool.clone(), supabase.clone(), handle.clone());
+
+                // Pull remote changes if user is authenticated
+                if !access_token.is_empty() {
+                    let user_id: Option<String> = sqlx::query_scalar(
+                        "SELECT value FROM app_preferences WHERE key = 'user_id'",
+                    )
+                    .fetch_optional(&pool)
+                    .await
+                    .unwrap_or(None)
+                    .flatten();
+
+                    if let Some(uid) = user_id {
+                        let pool_clone = pool.clone();
+                        let supa_clone = supabase.clone();
+                        tokio::spawn(async move {
+                            if let Err(e) = pull_remote_changes(&pool_clone, &supa_clone, &uid).await {
+                                eprintln!("[startup] pull_remote_changes failed: {e}");
+                            }
+                        });
+                    }
+                }
+
                 handle.manage(DbState(pool));
+                handle.manage(SupabaseState(supabase));
             });
             Ok(())
         })
@@ -93,6 +146,10 @@ pub fn run() {
             upload_avatar,
             remove_avatar,
             get_avatar_path,
+            // Sync commands
+            get_sync_status,
+            force_sync,
+            clear_sync_queue,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

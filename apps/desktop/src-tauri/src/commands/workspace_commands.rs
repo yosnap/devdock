@@ -1,5 +1,6 @@
 use crate::models::{CreateWorkspacePayload, UpdateWorkspacePayload, Workspace};
 use crate::services::db_service::DbState;
+use crate::sync::sync_queue;
 use chrono::Utc;
 use sqlx::Row;
 use tauri::State;
@@ -58,6 +59,22 @@ pub async fn create_workspace(
     .await
     .map_err(|e| format!("Failed to create workspace: {e}"))?;
 
+    // Enqueue for cloud sync
+    {
+        let pool_clone = pool.clone();
+        let id_clone = id.clone();
+        let ws_json = serde_json::json!({
+            "id": &id, "name": &payload.name, "color": &payload.color,
+            "icon": &payload.icon, "sort_order": sort_order, "created_at": &now,
+        });
+        tokio::spawn(async move {
+            let _ = sync_queue::enqueue(
+                &pool_clone, "workspaces", &id_clone,
+                "INSERT", Some(ws_json.to_string()),
+            ).await;
+        });
+    }
+
     Ok(Workspace {
         id,
         name: payload.name,
@@ -102,7 +119,7 @@ pub async fn update_workspace(
     .await
     .map_err(|e| format!("DB error: {e}"))?;
 
-    Ok(Workspace {
+    let ws = Workspace {
         id: row.get("id"),
         name: row.get("name"),
         color: row.get("color"),
@@ -110,7 +127,25 @@ pub async fn update_workspace(
         avatar: row.get("avatar"),
         sort_order: row.get("sort_order"),
         created_at: row.get("created_at"),
-    })
+    };
+
+    // Enqueue for cloud sync
+    {
+        let pool_clone = pool.clone();
+        let record_id = ws.id.clone();
+        let ws_json = serde_json::json!({
+            "id": &ws.id, "name": &ws.name, "color": &ws.color,
+            "icon": &ws.icon, "sort_order": ws.sort_order,
+        });
+        tokio::spawn(async move {
+            let _ = sync_queue::enqueue(
+                &pool_clone, "workspaces", &record_id,
+                "UPDATE", Some(ws_json.to_string()),
+            ).await;
+        });
+    }
+
+    Ok(ws)
 }
 
 /// Delete a workspace (projects become workspace-less)
@@ -121,5 +156,18 @@ pub async fn delete_workspace(id: String, db: State<'_, DbState>) -> Result<(), 
         .execute(&db.0)
         .await
         .map_err(|e| format!("Failed to delete workspace: {e}"))?;
+
+    // Enqueue soft-delete
+    {
+        let pool_clone = db.0.clone();
+        let record_id = id.clone();
+        tokio::spawn(async move {
+            let _ = sync_queue::enqueue(
+                &pool_clone, "workspaces", &record_id,
+                "DELETE", Some(record_id.clone()),
+            ).await;
+        });
+    }
+
     Ok(())
 }
