@@ -1,12 +1,12 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "DevDock",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "identifier": "com.paulo.devdock",
   "build": {
-    "beforeDevCommand": "npm run dev",
+    "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "npm run build",
+    "beforeBuildCommand": "pnpm vite build",
     "frontendDist": "../dist"
   },
   "app": {
