@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "name": "DevDock",
+    "slug": "devdock",
+    "version": "0.2.0",
+    "scheme": "devdock",
+    "platforms": ["ios", "android"],
+    "icon": "./assets/icon.png",
+    "splash": { "resizeMode": "contain", "backgroundColor": "#ffffff" },
+    "newArchEnabled": true
+  }
+}
