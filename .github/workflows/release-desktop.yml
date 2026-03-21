@@ -50,8 +50,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Build frontend first
+        working-directory: apps/desktop
+        run: pnpm run build && ls -la dist/ && ls -la dist/assets/
+
       - name: Build desktop app
-        uses: tauri-apps/tauri-action@v0
+        uses: tauri-apps/tauri-action@v0.5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
