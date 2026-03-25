@@ -23,22 +23,22 @@
       }
     ],
     "security": {
-      "csp": {
-        "default-src": "'self' ipc: http://ipc.localhost",
-        "img-src": "'self' asset: http://asset.localhost https://asset.localhost blob: data: https://cdn.jsdelivr.net https://*.supabase.co",
-        "script-src": "'self'",
-        "style-src": "'self' 'unsafe-inline'"
-      },
+      "csp": null,
       "assetProtocol": {
         "enable": true,
-        "scope": ["$APPDATA/**", "$HOME/**"]
+        "scope": [
+          "$APPDATA/**",
+          "$HOME/**"
+        ]
       }
     }
   },
   "plugins": {
     "deep-link": {
       "desktop": {
-        "schemes": ["devdock"]
+        "schemes": [
+          "devdock"
+        ]
       }
     },
     "shell": {
@@ -72,7 +72,11 @@
     },
     "linux": {
       "deb": {
-        "depends": ["libwebkit2gtk-4.1-0", "libgtk-3-0", "libayatana-appindicator3-1"]
+        "depends": [
+          "libwebkit2gtk-4.1-0",
+          "libgtk-3-0",
+          "libayatana-appindicator3-1"
+        ]
       }
     }
   }
