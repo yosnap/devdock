@@ -93,13 +93,26 @@ pub async fn add_project(
     {
         let pool_clone = pool.clone();
         let id_clone = id.clone();
-        let project_json = serde_json::json!({
-            "id": &id, "name": &payload.name, "description": &payload.description,
-            "stack": &stack, "workspace_id": &payload.workspace_id,
-            "is_favorite": false, "status": "active", "health_score": 0,
-            "created_at": &now, "updated_at": &now,
-        });
+        let name_for_sync = payload.name.clone();
+        let description_for_sync = payload.description.clone();
+        let stack_for_sync = stack.clone();
+        let workspace_for_sync = payload.workspace_id.clone();
+        let now_for_sync = now.clone();
         tokio::spawn(async move {
+            let user_id: String = sqlx::query_scalar(
+                "SELECT COALESCE((SELECT value FROM app_preferences WHERE key='user_id'),'')"
+            )
+            .fetch_one(&pool_clone)
+            .await
+            .unwrap_or_default();
+
+            let project_json = serde_json::json!({
+                "id": &id_clone, "user_id": user_id,
+                "name": name_for_sync, "description": description_for_sync,
+                "stack": stack_for_sync, "workspace_id": workspace_for_sync,
+                "is_favorite": false, "status": "active", "health_score": 0,
+                "created_at": now_for_sync, "updated_at": now_for_sync,
+            });
             let _ = sync_queue::enqueue(
                 &pool_clone, "projects", &id_clone,
                 "INSERT", Some(project_json.to_string()),
@@ -261,7 +274,10 @@ pub async fn launch_project(id: String, db: State<'_, DbState>) -> Result<(), St
     let row = sqlx::query(
         r#"SELECT p.path, p.default_ide_id, i.command, i.args
            FROM projects p
-           LEFT JOIN ide_configs i ON p.default_ide_id = i.id
+           LEFT JOIN ide_configs i ON i.id = COALESCE(
+             p.default_ide_id,
+             (SELECT id FROM ide_configs WHERE is_default = 1 ORDER BY sort_order ASC LIMIT 1)
+           )
            WHERE p.id = ?"#,
     )
     .bind(&id)
@@ -274,7 +290,7 @@ pub async fn launch_project(id: String, db: State<'_, DbState>) -> Result<(), St
     let command: Option<String> = row.get("command");
     let args: Option<String> = row.get("args");
 
-    let cmd = command.ok_or("No IDE configured for this project")?;
+    let cmd = command.ok_or("No IDE configured. Set a default IDE in Settings")?;
     let args_str = args.unwrap_or_else(|| "{path}".to_string());
 
     ide_launcher::launch_ide(&cmd, &args_str, &path)?;

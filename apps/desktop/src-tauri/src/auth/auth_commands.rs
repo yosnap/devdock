@@ -106,8 +106,20 @@ pub async fn sign_in_with_email(
 
         // Backfill user_id into pending sync_queue items (created before login)
         let _ = sqlx::query(
-            "UPDATE sync_queue SET payload = json_set(payload, '$.user_id', ?)
-             WHERE operation IN ('INSERT','UPDATE') AND json_extract(payload, '$.user_id') IS NULL"
+            "UPDATE sync_queue
+             SET payload = json_set(COALESCE(payload, '{}'), '$.user_id', ?),
+                 retry_count = CASE
+                     WHEN COALESCE(last_error, '') LIKE 'Missing required field: user_id%' THEN 0
+                     ELSE retry_count
+                 END,
+                 last_error = CASE
+                     WHEN COALESCE(last_error, '') LIKE 'Missing required field: user_id%' THEN NULL
+                     ELSE last_error
+                 END
+             WHERE operation IN ('INSERT','UPDATE')
+               AND (payload IS NULL
+                 OR json_extract(payload, '$.user_id') IS NULL
+                 OR json_extract(payload, '$.user_id') = '')"
         )
         .bind(&uid)
         .execute(&db.0)
@@ -357,8 +369,20 @@ pub async fn handle_oauth_callback(app: &tauri::AppHandle, url: &str) -> Result<
         .await;
 
         let _ = sqlx::query(
-            "UPDATE sync_queue SET payload = json_set(payload, '$.user_id', ?)
-             WHERE operation IN ('INSERT','UPDATE') AND json_extract(payload, '$.user_id') IS NULL"
+            "UPDATE sync_queue
+             SET payload = json_set(COALESCE(payload, '{}'), '$.user_id', ?),
+                 retry_count = CASE
+                     WHEN COALESCE(last_error, '') LIKE 'Missing required field: user_id%' THEN 0
+                     ELSE retry_count
+                 END,
+                 last_error = CASE
+                     WHEN COALESCE(last_error, '') LIKE 'Missing required field: user_id%' THEN NULL
+                     ELSE last_error
+                 END
+             WHERE operation IN ('INSERT','UPDATE')
+               AND (payload IS NULL
+                 OR json_extract(payload, '$.user_id') IS NULL
+                 OR json_extract(payload, '$.user_id') = '')"
         )
         .bind(&uid)
         .execute(&db.0)
