@@ -63,11 +63,23 @@ pub async fn create_workspace(
     {
         let pool_clone = pool.clone();
         let id_clone = id.clone();
-        let ws_json = serde_json::json!({
-            "id": &id, "name": &payload.name, "color": &payload.color,
-            "icon": &payload.icon, "sort_order": sort_order, "created_at": &now,
-        });
+        let name_for_sync = payload.name.clone();
+        let color_for_sync = payload.color.clone();
+        let icon_for_sync = payload.icon.clone();
+        let now_for_sync = now.clone();
         tokio::spawn(async move {
+            let user_id: String = sqlx::query_scalar(
+                "SELECT COALESCE((SELECT value FROM app_preferences WHERE key='user_id'),'')"
+            )
+            .fetch_one(&pool_clone)
+            .await
+            .unwrap_or_default();
+
+            let ws_json = serde_json::json!({
+                "id": &id_clone, "user_id": user_id,
+                "name": name_for_sync, "color": color_for_sync,
+                "icon": icon_for_sync, "sort_order": sort_order, "created_at": now_for_sync,
+            });
             let _ = sync_queue::enqueue(
                 &pool_clone, "workspaces", &id_clone,
                 "INSERT", Some(ws_json.to_string()),
@@ -133,11 +145,25 @@ pub async fn update_workspace(
     {
         let pool_clone = pool.clone();
         let record_id = ws.id.clone();
-        let ws_json = serde_json::json!({
-            "id": &ws.id, "name": &ws.name, "color": &ws.color,
-            "icon": &ws.icon, "sort_order": ws.sort_order,
-        });
+        let ws_name = ws.name.clone();
+        let ws_color = ws.color.clone();
+        let ws_icon = ws.icon.clone();
+        let ws_sort_order = ws.sort_order;
+        let ws_created_at = ws.created_at.clone();
         tokio::spawn(async move {
+            let user_id: String = sqlx::query_scalar(
+                "SELECT COALESCE((SELECT value FROM app_preferences WHERE key='user_id'),'')"
+            )
+            .fetch_one(&pool_clone)
+            .await
+            .unwrap_or_default();
+
+            let ws_json = serde_json::json!({
+                "id": &record_id, "user_id": user_id,
+                "name": ws_name, "color": ws_color,
+                "icon": ws_icon, "sort_order": ws_sort_order,
+                "created_at": ws_created_at,
+            });
             let _ = sync_queue::enqueue(
                 &pool_clone, "workspaces", &record_id,
                 "UPDATE", Some(ws_json.to_string()),

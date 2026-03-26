@@ -37,6 +37,19 @@ async fn process_queue(
     app: &AppHandle,
     avatars_dir: &PathBuf,
 ) -> Result<(), String> {
+    // Recover previously parked rows that failed only because user_id was missing.
+    // If user_id exists now in payload, make them retryable again.
+    let _ = sqlx::query(
+        "UPDATE sync_queue
+         SET retry_count = 0, last_error = NULL
+         WHERE retry_count >= 5
+           AND COALESCE(last_error, '') LIKE 'Missing required field: user_id%'
+           AND json_extract(payload, '$.user_id') IS NOT NULL
+           AND json_extract(payload, '$.user_id') <> ''"
+    )
+    .execute(pool)
+    .await;
+
     let items = sync_queue::dequeue_batch(pool, BATCH_SIZE).await?;
 
     if items.is_empty() {
