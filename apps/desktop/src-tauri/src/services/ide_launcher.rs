@@ -8,20 +8,46 @@ pub struct LaunchResult {
     pub message: String,
 }
 
+/// Resolve short IDE command to full path for production builds.
+/// In production, PATH doesn't include /usr/local/bin etc.
+fn resolve_command(cmd: &str) -> String {
+    // If already absolute, use as-is
+    if cmd.starts_with('/') {
+        return cmd.to_string();
+    }
+
+    // Common locations for CLI tools on macOS
+    let search_paths = [
+        "/usr/local/bin",
+        "/opt/homebrew/bin",
+        "/usr/bin",
+        "/Applications",
+    ];
+
+    for dir in &search_paths {
+        let full = format!("{}/{}", dir, cmd);
+        if Path::new(&full).exists() {
+            return full;
+        }
+    }
+
+    // macOS: try `open -a` for app names as fallback
+    cmd.to_string()
+}
+
 /// Launch an IDE with the given command template and project path.
 /// The `args` template uses `{path}` as placeholder.
 pub fn launch_ide(command: &str, args_template: &str, project_path: &str) -> Result<LaunchResult, String> {
-    // Validate project path exists
     if !Path::new(project_path).exists() {
         return Err(format!("Project path does not exist: {project_path}"));
     }
 
-    // Validate command is not empty and doesn't contain dangerous chars
     if command.is_empty() || command.contains(';') || command.contains('&') || command.contains('|') {
         return Err(format!("Invalid IDE command: {command}"));
     }
 
-    // Build args by replacing {path} placeholder
+    let resolved_cmd = resolve_command(command);
+
     let resolved_args: Vec<String> = args_template
         .split_whitespace()
         .map(|arg| {
@@ -33,17 +59,16 @@ pub fn launch_ide(command: &str, args_template: &str, project_path: &str) -> Res
         })
         .collect();
 
-    // Spawn detached process so the IDE runs independently
-    let result = Command::new(command)
+    let result = Command::new(&resolved_cmd)
         .args(&resolved_args)
         .spawn();
 
     match result {
         Ok(_) => Ok(LaunchResult {
             success: true,
-            message: format!("Launched {command} for {project_path}"),
+            message: format!("Launched {resolved_cmd} for {project_path}"),
         }),
-        Err(e) => Err(format!("Failed to launch {command}: {e}")),
+        Err(e) => Err(format!("Failed to launch {resolved_cmd}: {e}")),
     }
 }
 
